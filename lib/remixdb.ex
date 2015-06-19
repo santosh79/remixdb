@@ -1,7 +1,7 @@
 defmodule Remixdb do
   defmodule Server do
     def start do
-      server_pid = spawn fn -> loop() end
+      server_pid = spawn fn -> loop(HashDict.new) end
       Process.register server_pid, :remixdb_server
     end
 
@@ -14,7 +14,8 @@ defmodule Remixdb do
     end
 
     def get(from, key) do
-      send from, "bar"
+      server_pid = Process.whereis :remixdb_server
+      send server_pid, {from, {:get, key}}
     end
 
     def stop(from) do
@@ -22,13 +23,21 @@ defmodule Remixdb do
       send server_pid, {from, :die}
     end
 
-    def loop do
+    def loop(map) do
       receive do
         {from, {:set, key, val}} ->
+          new_map = Dict.put(map, key, val)
           send from, :ok
-          loop()
+          loop new_map
+        {from, {:get, key}} ->
+          val = Dict.get(map, key)
+          send from, val
+          loop map
         {from, :die} ->
-          send from, :ok
+          spawn fn ->
+            :timer.sleep 50
+            send from, :ok
+          end
           Process.unregister :remixdb_server
           Process.exit self, "asked to die by #{inspect from}"
       end
