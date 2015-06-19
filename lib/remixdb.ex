@@ -1,7 +1,7 @@
 defmodule Remixdb do
   defmodule Server do
     def start do
-      server_pid = spawn fn -> loop(HashDict.new) end
+      {:ok, server_pid} = Task.start(fn -> loop(HashDict.new) end)
       Process.register server_pid, :remixdb_server
     end
 
@@ -34,7 +34,7 @@ defmodule Remixdb do
           send from, val
           loop map
         {from, :die} ->
-          spawn fn ->
+          Task.start fn ->
             :timer.sleep 50
             send from, :ok
           end
