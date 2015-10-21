@@ -1,46 +1,39 @@
 defmodule Remixdb do
+  defmodule TcpServer do
+    def start_server do
+      port = 6379
+      {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
+      IO.puts "Accepting connections on port: #{port}"
+      loop_acceptor socket
+    end
+
+    defp loop_acceptor(socket) do
+      {:ok, client} = :gen_tcp.accept(socket)
+      serve(client)
+      loop_acceptor(socket)
+    end
+
+    defp serve(socket) do
+      socket
+      |> read_line()
+      |> write_line(socket)
+
+      serve(socket)
+    end
+
+    defp read_line(socket) do
+      {:ok, data} = :gen_tcp.recv(socket, 0)
+      data
+    end
+
+    defp write_line(line, socket) do
+      :gen_tcp.send(socket, line)
+    end
+  end
+
   defmodule Server do
-    def start do
-      {:ok, server_pid} = Task.start(fn -> loop(HashDict.new) end)
-      Process.register server_pid, :remixdb_server
-    end
-
-    def get_connection do
-    end
-
-    def set(from, key, val) do
-      server_pid = Process.whereis :remixdb_server
-      send server_pid, {from, {:set, key, val}}
-    end
-
-    def get(from, key) do
-      server_pid = Process.whereis :remixdb_server
-      send server_pid, {from, {:get, key}}
-    end
-
-    def stop(from) do
-      server_pid = Process.whereis :remixdb_server
-      send server_pid, {from, :die}
-    end
-
-    def loop(map) do
-      receive do
-        {from, {:set, key, val}} ->
-          new_map = Dict.put(map, key, val)
-          send from, :ok
-          loop new_map
-        {from, {:get, key}} ->
-          val = Dict.get(map, key)
-          send from, val
-          loop map
-        {from, :die} ->
-          Task.start fn ->
-            :timer.sleep 50
-            send from, :ok
-          end
-          Process.unregister :remixdb_server
-          Process.exit self, "asked to die by #{inspect from}"
-      end
+    def start_tcp_server do
+      TcpServer.start_server
     end
   end
 end
