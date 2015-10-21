@@ -14,15 +14,20 @@ defmodule Remixdb.Client do
   defp serve(socket, num) do
     IO.puts "num: #{num}"
 
-    socket
-    |> read_line()
+    val = socket |> read_line()
 
-    case num do
-      6 -> send_ok(socket)
-      11 -> send_bar(socket)
-      _  -> :void
+    case val do
+      :ok ->
+        case num do
+          6 -> send_ok(socket)
+          11 -> send_bar(socket)
+          _  -> :void
+        end
+        serve socket, (num + 1)
+      :error ->
+        exit :client_closed
     end
-    serve socket, (num + 1)
+
   end
 
   defp read_line(socket) do
@@ -30,9 +35,13 @@ defmodule Remixdb.Client do
     case val do
       {:ok, data} ->
         IO.puts "data: #{data}"
-        data
-      {:error, _} ->
+        :ok
+      {:error, :closed} ->
         IO.puts "client closed the connection"
+        :error
+      {:error, _reason} ->
+        IO.puts "client closed the connection: #{_reason}"
+        :error
     end
   end
 
