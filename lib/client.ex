@@ -10,6 +10,7 @@ defmodule Remixdb.Client do
     serve
   end
 
+
   defp print_new_connection(socket) do
     IO.puts "new connection from"
     print_sock_info
@@ -22,25 +23,22 @@ defmodule Remixdb.Client do
   end
 
   defp serve(socket) do
-    serve socket, 0
+    parser_pid = Remixdb.Parser.start socket, self()
+    case get_parser_response(parser_pid) do
+      {:set, args} ->
+        IO.puts "got SET command: "
+        IO.inspect args
+        socket |> send_ok |> serve
+      {:get, args} ->
+        IO.puts "got GET command: "
+        IO.inspect args
+        socket |> send_bar |> serve
+    end
   end
 
-  defp serve(socket, num) do
-    IO.puts "num: #{num}"
-    val = socket |> read_line()
-
-    case val do
-      :ok ->
-        case num do
-          6 -> send_ok(socket)
-          11 -> send_bar(socket)
-          _  -> :void
-        end
-        serve socket, (num + 1)
-      :error ->
-        print_connection_closed
-        :inet.close socket
-        exit :client_closed
+  defp get_parser_response(parser) do
+    receive do
+      {parser, args} -> args
     end
   end
 
@@ -64,27 +62,17 @@ defmodule Remixdb.Client do
     IO.puts "and remote port: #{remote_port}"
   end
 
-  defp read_line(socket) do
-    val = :gen_tcp.recv(socket, 0)
-    case val do
-      {:ok, data} ->
-        IO.puts "data: #{data}"
-        :ok
-      {:error, _reason} ->
-        IO.puts "error with connection: #{_reason}"
-        :error
-    end
-  end
-
   defp send_ok(socket) do
     IO.puts "sending ok"
     :gen_tcp.send socket, "+OK\r\n"
+    socket
   end
 
   defp send_bar(socket) do
     IO.puts "sending bar"
     str = "$3\r\nBARr\r\n"
     :gen_tcp.send socket, "$3\r\nBAR\r\n"
+    socket
   end
 
   defp write_line(line, socket) do
