@@ -22,18 +22,52 @@ defmodule Remixdb.Client do
     print_sock_info
   end
 
+  defp get_key_pid(key) do
+    key_atom = ("remixdb_string|" <> key) |> String.to_atom
+    key_pid = case Process.whereis(key_atom) do
+      nil -> Remixdb.String.start key
+      pid -> pid
+    end
+  end
+
+  defp wait_for_ok(key_pid) do
+    receive do
+      {:ok, ^key_pid} -> :void
+    end
+  end
+
+  defp wait_for_val(key_pid) do
+    receive do
+      {:ok, ^key_pid, val} -> val
+    end
+  end
+
   defp serve(socket) do
     parser_pid = Remixdb.Parser.start socket, self()
     case get_parser_response(parser_pid) do
       {:set, args} ->
-        IO.puts "got SET command: "
-        IO.inspect args
+        [key, val] = args
+        key_pid = get_key_pid key
+        send key_pid, {self(), {:set, args}}
+        wait_for_ok key_pid
         socket |> send_ok |> serve
       {:get, args} ->
         IO.puts "got GET command: "
         IO.inspect args
-        socket |> send_bar |> serve
+        [key] = args
+        key_pid = get_key_pid key
+        send key_pid, {self(), :get}
+        val = wait_for_val(key_pid)
+        socket |> send_val(val) |> serve
     end
+  end
+
+  defp send_val(socket, val) do
+    val_bytes = val |> String.length |> Integer.to_string
+    msg = "$" <> val_bytes <> "\r\n" <> val <> "\r\n"
+    IO.puts "sending val: #{msg}"
+    :gen_tcp.send socket, msg
+    socket
   end
 
   defp get_parser_response(parser) do
@@ -66,17 +100,6 @@ defmodule Remixdb.Client do
     IO.puts "sending ok"
     :gen_tcp.send socket, "+OK\r\n"
     socket
-  end
-
-  defp send_bar(socket) do
-    IO.puts "sending bar"
-    str = "$3\r\nBARr\r\n"
-    :gen_tcp.send socket, "$3\r\nBAR\r\n"
-    socket
-  end
-
-  defp write_line(line, socket) do
-    :gen_tcp.send socket, line
   end
 end
 
