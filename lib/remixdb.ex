@@ -19,7 +19,7 @@ defmodule Remixdb do
   end
 
   defmodule Server do
-    def start_tcp_server do
+    def start do
       server_pid = spawn TcpServer, :start_server, []
     end
   end

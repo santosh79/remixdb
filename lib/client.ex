@@ -13,7 +13,6 @@ defmodule Remixdb.Client do
 
   defp serve(socket, num) do
     IO.puts "num: #{num}"
-
     val = socket |> read_line()
 
     case val do
