@@ -5,6 +5,7 @@ defmodule Remixdb.Mixfile do
     [app: :remixdb,
      version: "0.0.1",
      elixir: "~> 1.1",
+     default_task: "remixdb",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps]
@@ -30,3 +31,4 @@ defmodule Remixdb.Mixfile do
     [{ :exredis, ">= 0.2.1" }]
   end
 end
+
