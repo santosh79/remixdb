@@ -4,7 +4,21 @@ defmodule Remixdb.Client do
   end
 
   def loop(socket) do
-    serve socket
+    socket |>
+    store_sock_info |>
+    print_new_connection |>
+    serve
+  end
+
+  defp print_new_connection(socket) do
+    IO.puts "new connection from"
+    print_sock_info
+    socket
+  end
+
+  defp print_connection_closed() do
+    IO.puts "client closed connection"
+    print_sock_info
   end
 
   defp serve(socket) do
@@ -24,9 +38,30 @@ defmodule Remixdb.Client do
         end
         serve socket, (num + 1)
       :error ->
+        print_connection_closed
+        :inet.close socket
         exit :client_closed
     end
+  end
 
+  defp store_sock_info(socket) do
+    peer_info = :inet.peername socket
+    case peer_info do
+      {:ok, {host_ip, port}} ->
+        IO.inspect host_ip
+        Process.put :remote_host, host_ip
+        Process.put :remote_port, port
+      {_} -> :void
+    end
+    socket
+  end
+
+  defp print_sock_info() do
+    remote_host = Process.get :remote_host
+    remote_port = Process.get :remote_port
+    IO.puts "remote host: "
+    IO.inspect remote_host
+    IO.puts "and remote port: #{remote_port}"
   end
 
   defp read_line(socket) do
@@ -35,11 +70,8 @@ defmodule Remixdb.Client do
       {:ok, data} ->
         IO.puts "data: #{data}"
         :ok
-      {:error, :closed} ->
-        IO.puts "client closed the connection"
-        :error
       {:error, _reason} ->
-        IO.puts "client closed the connection: #{_reason}"
+        IO.puts "error with connection: #{_reason}"
         :error
     end
   end
