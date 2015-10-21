@@ -1,2 +1,2 @@
 %{"eredis": {:hex, :eredis, "1.0.8"},
-  "exredis": {:hex, :exredis, "0.1.3"}}
+  "exredis": {:hex, :exredis, "0.2.1"}}

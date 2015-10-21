@@ -27,6 +27,6 @@ defmodule Remixdb.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{ :exredis, ">= 0.1.1" }]
+    [{ :exredis, ">= 0.2.1" }]
   end
 end
