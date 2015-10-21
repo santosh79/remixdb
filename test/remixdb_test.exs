@@ -7,7 +7,7 @@ defmodule RemixdbTest do
     end
 
     test "set and get" do
-      Remixdb.Server.start_tcp_server
+      Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       client |> Exredis.query ["SET", "FOO", "BAR"]
       val = client |> Exredis.query ["GET", "FOO"]
