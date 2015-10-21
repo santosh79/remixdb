@@ -6,10 +6,14 @@ defmodule RemixdbTest do
       Remixdb.Server.start
     end
 
-    test "start_tcp_server" do
+    test "set and get" do
       Remixdb.Server.start_tcp_server
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+      client |> Exredis.query ["SET", "FOO", "BAR"]
+      val = client |> Exredis.query ["GET", "FOO"]
+      assert val === "BAR"
+      :timer.sleep 1000
+      client |> Exredis.stop
     end
-
   end
 end
