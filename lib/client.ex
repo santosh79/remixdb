@@ -47,6 +47,7 @@ defmodule Remixdb.Client do
   end
 
   defp serve(socket, parser) do
+    import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2]
     case get_parser_response(parser) do
       {:set, args} ->
         [key, val] = args
@@ -68,20 +69,6 @@ defmodule Remixdb.Client do
         end
         socket |> serve(parser)
     end
-  end
-
-  defp send_nil(socket) do
-    IO.puts "sending nil"
-    :gen_tcp.send socket, "$-1\r\n"
-    socket
-  end
-
-  defp send_val(socket, val) do
-    val_bytes = val |> String.length |> Integer.to_string
-    msg = "$" <> val_bytes <> "\r\n" <> val <> "\r\n"
-    IO.puts "sending val: #{msg}"
-    :gen_tcp.send socket, msg
-    socket
   end
 
   defp get_parser_response(parser) do
@@ -108,12 +95,6 @@ defmodule Remixdb.Client do
     IO.puts "remote host: "
     IO.inspect remote_host
     IO.puts "and remote port: #{remote_port}"
-  end
-
-  defp send_ok(socket) do
-    IO.puts "sending ok"
-    :gen_tcp.send socket, "+OK\r\n"
-    socket
   end
 end
 
