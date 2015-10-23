@@ -21,6 +21,12 @@ defmodule Remixdb do
   defmodule Server do
     def start do
       server_pid = spawn TcpServer, :start_server, []
+      Process.register server_pid, :remixdb_server
+    end
+
+    def stop do
+      server_pid = Process.whereis :remixdb_server
+      Process.exit server_pid, :kill
     end
   end
 end
