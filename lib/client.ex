@@ -7,7 +7,7 @@ defmodule Remixdb.Client do
     socket |>
     store_sock_info |>
     print_new_connection |>
-    serve(Remixdb.Parser.start socket, self())
+    serve(Remixdb.Parser.start %Remixdb.Socket{socket: socket}, self())
   end
 
 
