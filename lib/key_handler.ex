@@ -9,5 +9,9 @@ defmodule Remixdb.KeyHandler do
   def get_key_pid(key) do
     ("remixdb_string|" <> key) |> String.to_atom |> Process.whereis
   end
+
+  def key_exists?(key) do
+    !!(key |> get_key_pid)
+  end
 end
 

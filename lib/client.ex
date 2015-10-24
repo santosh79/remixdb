@@ -36,13 +36,13 @@ defmodule Remixdb.Client do
 
   defp serve(socket, parser) do
     import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2]
-    import Remixdb.KeyHandler, only: [get_key_pid: 1, get_or_create_key_pid: 1]
+    import Remixdb.KeyHandler, only: [get_key_pid: 1, get_or_create_key_pid: 1, key_exists?: 1]
     case get_parser_response(parser) do
       {:exists, [key]} ->
-        case get_key_pid(key) do
-          nil ->
+        case key_exists?(key) do
+          false ->
             socket |> send_integer_response(0)
-          key_pid ->
+          true ->
             socket |> send_integer_response(1)
         end
         socket |> serve(parser)
