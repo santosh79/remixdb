@@ -12,6 +12,9 @@ defmodule Remixdb.Parser do
       {:get, args} ->
         send client, {self(), {:get, args}}
         loop stream, client
+      {:exists, args} ->
+        send client, {self(), {:exists, args}}
+        loop stream, client
     end
   end
 
@@ -25,8 +28,9 @@ defmodule Remixdb.Parser do
           {:error, _reason} -> {:error, _reason}
           {:ok, [cmd|args]} ->
             case (cmd |> String.upcase) do
-              "SET" -> {:set, args}
-              "GET" -> {:get, args}
+              "SET"    -> {:set, args}
+              "GET"    -> {:get, args}
+              "EXISTS" -> {:exists, args}
               cmd ->
                 IO.puts "Parser: unknown command: "
                 IO.inspect cmd
