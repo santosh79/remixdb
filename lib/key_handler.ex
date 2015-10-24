@@ -24,7 +24,6 @@ defmodule Remixdb.KeyHandler do
   def loop do
     receive do
       {sender, {:set, [key, val]}} ->
-        # TODO: Re-factor this
         key_pid = case (key |> get_key_pid) do
           nil -> Remixdb.String.start key
           pid -> pid
@@ -61,8 +60,6 @@ defmodule Remixdb.KeyHandler do
       :error -> :error
       val -> val
     end
-    IO.puts "KeyHandler returning for set: "
-    IO.inspect val
     val
   end
 
@@ -90,8 +87,6 @@ defmodule Remixdb.KeyHandler do
 
   defp get_key_handler do
     pid = Process.whereis :remixdb_key_handler
-    IO.puts "get_key_handler: "
-    IO.inspect pid
     pid
   end
 end
