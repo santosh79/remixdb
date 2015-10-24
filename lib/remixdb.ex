@@ -6,9 +6,13 @@ defmodule Remixdb do
       IO.puts "Accepting connections on port: #{port}"
       pid = Remixdb.ClientHander.start
       Process.register pid, :remixdb_connection_handler
+      Process.register self(), :remixdb_server
       loop_acceptor socket
     end
     
+    def stop do
+      Remixdb.ProcessCleaner.stop :remixdb_server
+    end
 
     defp loop_acceptor(socket) do
       {:ok, client} = :gen_tcp.accept(socket)
@@ -20,13 +24,15 @@ defmodule Remixdb do
 
   defmodule Server do
     def start do
-      server_pid = spawn TcpServer, :start_server, []
-      Process.register server_pid, :remixdb_server
+      spawn TcpServer, :start_server, []
+      spawn Remixdb.KeyHandler, :start, []
     end
 
     def stop do
       server_pid = Process.whereis :remixdb_server
       Process.exit server_pid, :kill
+      Remixdb.KeyHandler.stop
+      Remixdb.TcpServer.stop
     end
   end
 end

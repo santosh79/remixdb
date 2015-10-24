@@ -28,35 +28,24 @@ defmodule Remixdb.Client do
     end
   end
 
-  defp wait_for_val(key_pid) do
-    receive do
-      {:ok, ^key_pid, val} -> val
-    end
-  end
-
   defp serve(socket, parser) do
     import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2]
-    import Remixdb.KeyHandler, only: [get_key_pid: 1, get_or_create_key_pid: 1, key_exists?: 1]
     case get_parser_response(parser) do
       {:exists, [key]} ->
-        case key_exists?(key) do
+        case Remixdb.KeyHandler.exists?(key) do
           false ->
             socket |> send_integer_response(0)
           true ->
             socket |> send_integer_response(1)
         end
       {:set, [key, val]} ->
-        key_pid = get_or_create_key_pid key
-        send key_pid, {self(), {:set, [key, val]}}
-        wait_for_ok key_pid
+        Remixdb.KeyHandler.set key, val
         socket |> send_ok
       {:get, [key]} ->
-        case get_key_pid(key) do
+        case Remixdb.KeyHandler.get(key) do
           nil ->
             socket |> send_nil
-          key_pid ->
-            send key_pid, {self(), :get}
-            val = wait_for_val(key_pid)
+          val ->
             socket |> send_val(val)
         end
     end

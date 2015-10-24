@@ -22,8 +22,6 @@ defmodule Remixdb.Parser do
     case read_number_args(stream) do
       {:error, _reason} -> {:error, _reason}
       {:ok, num_args} ->
-        IO.puts "read_number_args"
-        IO.inspect num_args
         case read_args(stream, num_args) do
           {:error, _reason} -> {:error, _reason}
           {:ok, [cmd|args]} ->
@@ -49,7 +47,6 @@ defmodule Remixdb.Parser do
   defp read_args(stream, num, accum) do
     case read_bytes(stream) do
       {:ok, num_bytes} ->
-        IO.puts "reading bytes: #{num_bytes}"
         case read_data(stream, num_bytes) do
           {:ok, data} ->
             msg = data |> String.replace(~r/(.+)\r\n$/, "\\1")
@@ -65,7 +62,6 @@ defmodule Remixdb.Parser do
         msg = data |> String.replace(~r/(.+)\r\n/, "\\1")
         case String.length(msg) do
           ^num_bytes ->
-            IO.puts "num_bytes: #{num_bytes} and msg: #{msg}"
             {:ok, msg}
           _ -> {:error, msg}
         end
