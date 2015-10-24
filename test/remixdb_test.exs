@@ -2,11 +2,6 @@ defmodule RemixdbTest do
   defmodule Server do
     use ExUnit.Case
 
-    defp start_server do
-      Remixdb.Server.start
-    end
-
-
     setup_all context do
       Remixdb.Server.start
       :ok
