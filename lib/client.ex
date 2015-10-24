@@ -45,13 +45,12 @@ defmodule Remixdb.Client do
           true ->
             socket |> send_integer_response(1)
         end
-        socket |> serve(parser)
       {:set, args} ->
         [key, val] = args
         key_pid = get_or_create_key_pid key
         send key_pid, {self(), {:set, args}}
         wait_for_ok key_pid
-        socket |> send_ok |> serve(parser)
+        socket |> send_ok
       {:get, args} ->
         IO.puts "got GET command: "
         IO.inspect args
@@ -64,8 +63,8 @@ defmodule Remixdb.Client do
             val = wait_for_val(key_pid)
             socket |> send_val(val)
         end
-        socket |> serve(parser)
     end
+    socket |> serve(parser)
   end
 
   defp get_parser_response(parser) do
