@@ -22,18 +22,6 @@ defmodule Remixdb.Client do
     print_sock_info
   end
 
-  defp get_key_pid(key) do
-    ("remixdb_string|" <> key) |> String.to_atom |> Process.whereis
-  end
-
-  defp get_or_create_key_pid(key) do
-    key_atom = ("remixdb_string|" <> key) |> String.to_atom
-    key_pid = case Process.whereis(key_atom) do
-      nil -> Remixdb.String.start key
-      pid -> pid
-    end
-  end
-
   defp wait_for_ok(key_pid) do
     receive do
       {:ok, ^key_pid} -> :void
@@ -48,6 +36,7 @@ defmodule Remixdb.Client do
 
   defp serve(socket, parser) do
     import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2]
+    import Remixdb.KeyHandler, only: [get_key_pid: 1, get_or_create_key_pid: 1]
     case get_parser_response(parser) do
       {:exists, [key]} ->
         case get_key_pid(key) do
