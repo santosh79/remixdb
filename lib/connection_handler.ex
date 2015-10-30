@@ -1,19 +1,23 @@
 defmodule Remixdb.ClientHander do
-  def start do
-    spawn Remixdb.ClientHander, :loop, []
+  def init do
+    []
   end
 
-  def loop do
-    loop []
+  def new_client(client) do
+    new_client :remixdb_connection_handler, client
+  end
+  def new_client(name, client) do
+    Remixdb.SimpleServer.rpc name, {:new_client, client}
   end
 
-  defp loop(clients) do
-    receive do 
+  def handle(request, state) do
+    case request do
       {:new_client, client} ->
         IO.puts "connection handler: got new connection"
         Remixdb.Client.start client
-        loop clients ++ [client]
+        {:ok, state ++ [client]}
       {_} -> :void
     end
   end
 end
+
