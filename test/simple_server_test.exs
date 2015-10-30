@@ -34,7 +34,6 @@ defmodule RemixdbTest.SimpleServer do
     :ok
   end
 
-  @tag :current
   test "name server test" do
     Remixdb.SimpleServer.start :remixdb_nameserver_test, Remixdb.NameServerTest
     Remixdb.NameServerTest.set :remixdb_nameserver_test, "name", "john"

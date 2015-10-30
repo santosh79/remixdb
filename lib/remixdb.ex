@@ -25,13 +25,13 @@ defmodule Remixdb do
   defmodule Server do
     def start do
       spawn TcpServer, :start_server, []
-      spawn Remixdb.KeyHandler, :start, []
+      Remixdb.SimpleServer.start :remixdb_key_handler, Remixdb.KeyHandler
     end
 
     def stop do
       server_pid = Process.whereis :remixdb_server
       Process.exit server_pid, :kill
-      Remixdb.KeyHandler.stop
+      # Remixdb.KeyHandler.stop
       Remixdb.TcpServer.stop
     end
   end

@@ -7,6 +7,7 @@ defmodule RemixdbTest do
       :ok
     end
 
+    @tag :current
     test "exists" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       val = client |> Exredis.query ["EXISTS", "NON-EXISTENT-KEY"]
