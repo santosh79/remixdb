@@ -31,7 +31,6 @@ defmodule Remixdb do
     def stop do
       server_pid = Process.whereis :remixdb_server
       Process.exit server_pid, :kill
-      # Remixdb.KeyHandler.stop
       Remixdb.TcpServer.stop
     end
   end

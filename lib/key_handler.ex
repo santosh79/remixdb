@@ -15,11 +15,11 @@ defmodule Remixdb.KeyHandler do
     Remixdb.SimpleServer.rpc :remixdb_key_handler, {:set, key, val}
   end
 
-  def handle(request, state) do
+  def handle(request, nil) do
     case request do
       {:exists, key} ->
         val = !!(key |> get_key_pid)
-        {val, state}
+        {val, nil}
       {:get, key} ->
         val = case(key |> get_key_pid) do
           nil -> nil
@@ -27,7 +27,7 @@ defmodule Remixdb.KeyHandler do
             key |> get_key_name |>
             Remixdb.String.get(key)
         end
-        {val, state}
+        {val, nil}
       {:set, key, val} ->
         key_name = key |> get_key_name
         key_pid = case (key |> get_key_pid) do
@@ -36,7 +36,7 @@ defmodule Remixdb.KeyHandler do
           pid -> pid
         end
         Remixdb.String.set key_name, key, val
-        {:ok, state}
+        {:ok, nil}
     end
   end
 
