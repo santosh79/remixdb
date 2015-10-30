@@ -4,7 +4,7 @@ defmodule Remixdb.SimpleServer do
     start server_name, module_name, []
   end
   def start(server_name, module_name, args) when is_list(args)  do
-    spawn(fn ->
+    spawn_link(fn ->
       loop server_name, module_name, (apply(module_name, :init, args))
     end) |>
     Process.register(server_name)
