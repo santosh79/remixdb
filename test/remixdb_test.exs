@@ -34,5 +34,15 @@ defmodule RemixdbTest do
       client |> Exredis.stop
     end
 
+    @tag :skip
+    test "dbsize" do
+      client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+      client |> Exredis.query ["SET", "A", "1"]
+      client |> Exredis.query ["SET", "B", "2"]
+      val = client |> Exredis.query ["DBSIZE"]
+      assert val === "2"
+      client |> Exredis.stop
+    end
   end
 end
+
