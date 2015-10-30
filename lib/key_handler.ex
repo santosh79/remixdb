@@ -9,27 +9,16 @@ defmodule Remixdb.KeyHandler do
     Remixdb.ProcessCleaner.stop :remixdb_key_handler
   end
 
-  defp wait_for_val(key_pid) do
-    receive do
-      {:ok, ^key_pid, val} -> val
-    end
-  end
-
-  defp wait_for_ok(key_pid) do
-    receive do
-      {:ok, ^key_pid} -> :void
-    end
-  end
-
   def loop do
     receive do
       {sender, {:set, [key, val]}} ->
+        key_name = key |> get_key_name
         key_pid = case (key |> get_key_pid) do
-          nil -> Remixdb.String.start key
+          nil ->
+            Remixdb.SimpleServer.start key_name, Remixdb.String
           pid -> pid
         end
-        send key_pid, {self(), {:set, [key, val]}}
-        wait_for_ok key_pid
+        Remixdb.String.set key_name, key, val
         send sender, {self(), :ok}
       {sender, {:exists, key}} ->
         val = !!(key |> get_key_pid)
@@ -38,8 +27,8 @@ defmodule Remixdb.KeyHandler do
         val = case(key |> get_key_pid) do
           nil -> nil
           key_pid -> 
-            send key_pid, {self(), :get}
-            wait_for_val(key_pid)
+            key |> get_key_name |>
+            Remixdb.String.get(key)
         end
         send sender, {self(), val}
     end
@@ -82,7 +71,11 @@ defmodule Remixdb.KeyHandler do
   end
 
   def get_key_pid(key) do
-    ("remixdb_string|" <> key) |> String.to_atom |> Process.whereis
+    key |> get_key_name |> Process.whereis
+  end
+
+  defp get_key_name(key) do
+    ("remixdb_string|" <> key) |> String.to_atom
   end
 
   defp get_key_handler do
