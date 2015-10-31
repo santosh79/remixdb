@@ -31,6 +31,9 @@ defmodule Remixdb.Client do
   defp serve(socket, parser) do
     import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2]
     case get_parser_response(parser) do
+      :dbsize ->
+        val = Remixdb.KeyHandler.dbsize()
+        socket |> send_integer_response(val)
       {:exists, [key]} ->
         case Remixdb.KeyHandler.exists?(key) do
           false ->

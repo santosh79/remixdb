@@ -1,6 +1,6 @@
 defmodule Remixdb.KeyHandler do
   def init do
-    nil
+    %{}
   end
 
   def exists?(key) do
@@ -15,11 +15,18 @@ defmodule Remixdb.KeyHandler do
     Remixdb.SimpleServer.rpc :remixdb_key_handler, {:set, key, val}
   end
 
-  def handle(request, nil) do
+  def dbsize do
+    Remixdb.SimpleServer.rpc :remixdb_key_handler, :dbsize
+  end
+
+  def handle(request, state) do
     case request do
+      :dbsize ->
+        count = state |> Dict.keys |> Enum.count
+        {count, state}
       {:exists, key} ->
         val = !!(key |> get_key_pid)
-        {val, nil}
+        {val, state}
       {:get, key} ->
         val = case(key |> get_key_pid) do
           nil -> nil
@@ -27,16 +34,23 @@ defmodule Remixdb.KeyHandler do
             key |> get_key_name |>
             Remixdb.String.get(key)
         end
-        {val, nil}
+        {val, state}
       {:set, key, val} ->
         key_name = key |> get_key_name
+        new_key = false
         key_pid = case (key |> get_key_pid) do
           nil ->
+            new_key = true
             Remixdb.SimpleServer.start key_name, Remixdb.String
           pid -> pid
         end
         Remixdb.String.set key_name, key, val
-        {:ok, nil}
+        new_state = case new_key do
+          true ->
+            Dict.put(state, key_name, key_pid)
+          false -> state
+        end
+        {:ok, new_state}
     end
   end
 
