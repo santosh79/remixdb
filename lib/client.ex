@@ -27,35 +27,21 @@ defmodule Remixdb.Client do
     socket
   end
 
-  defp print_connection_closed() do
-    IO.puts "client closed connection"
-    print_sock_info
-  end
-
-  defp wait_for_ok(key_pid) do
-    receive do
-      {:ok, ^key_pid} -> :void
-    end
-  end
-
   defp serve(socket) do
-    import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2, send_response: 2]
+    import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_response: 2]
     case get_parser_response() do
       :flushall ->
         response = Remixdb.KeyHandler.flushall
         socket |> send_response(response)
       :dbsize ->
         val = Remixdb.KeyHandler.dbsize()
-        socket |> send_integer_response(val)
-      :dbsize ->
-        val = Remixdb.KeyHandler.dbsize()
-        socket |> send_integer_response(val)
+        socket |> send_response(val)
       {:exists, [key]} ->
         case Remixdb.KeyHandler.exists?(key) do
           false ->
-            socket |> send_integer_response(0)
+            socket |> send_response(0)
           true ->
-            socket |> send_integer_response(1)
+            socket |> send_response(1)
         end
       {:set, [key, val]} ->
         response = Remixdb.KeyHandler.set key, val
