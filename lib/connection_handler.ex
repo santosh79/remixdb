@@ -3,9 +3,6 @@ defmodule Remixdb.ClientHander do
     []
   end
 
-  def new_client(client) do
-    new_client :remixdb_connection_handler, client
-  end
   def new_client(name, client) do
     Remixdb.SimpleServer.rpc name, {:new_client, client}
   end
