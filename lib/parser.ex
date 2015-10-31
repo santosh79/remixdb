@@ -1,24 +1,26 @@
 defmodule Remixdb.Parser do
-  def start(stream, client) do
-    spawn Remixdb.Parser, :loop, [stream, client]
+  def init(stream) do
+    [stream]
   end
 
-  def loop(stream, client) do
-    case read_new_command(stream) do
-      {:error, _reason} -> :void
-      {:set, args} ->
-        send client, {self(), {:set, args}}
-        loop stream, client
-      {:get, args} ->
-        send client, {self(), {:get, args}}
-        loop stream, client
-      :dbsize ->
-        send client, {self(), :dbsize}
-        loop stream, client
-      {:exists, args} ->
-        send client, {self(), {:exists, args}}
-        loop stream, client
+  def read(server_name) do
+    Remixdb.SimpleServer.rpc server_name, :read
+  end
+
+  def handle(request, state) do
+    [stream] = state
+    case request do
+      :read ->
+        case read_new_command(stream) do
+          {:error, _reason} -> :void
+          response ->
+            {response, state}
+        end
     end
+  end
+
+  def start(stream, client) do
+    spawn Remixdb.Parser, :loop, [stream, client]
   end
 
   defp read_new_command(stream) do

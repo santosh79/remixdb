@@ -14,6 +14,8 @@ defmodule Remixdb.SimpleServer do
     receive do
       {from, request} ->
         case(apply(module_name, :handle, [request, state])) do
+          # TODO: Figure out what to do with :void
+          :void -> loop server_name, module_name, state
           {response, new_state} ->
             send from, {server_name, response}
             loop server_name, module_name, new_state

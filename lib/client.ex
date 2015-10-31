@@ -7,9 +7,19 @@ defmodule Remixdb.Client do
     socket |>
     store_sock_info |>
     print_new_connection |>
-    serve(Remixdb.Parser.start %Remixdb.Socket{socket: socket}, self())
+    setup_socket
   end
 
+  def setup_socket(socket) do
+    stream = %Remixdb.Socket{socket: socket}
+    parser_name = get_parser_name()
+    Remixdb.SimpleServer.start parser_name, Remixdb.Parser, [stream]
+    serve socket
+  end
+
+  defp get_parser_name do
+    "remix_db_parser_for|" <> (self() |> :erlang.pid_to_list |> List.to_string) |> String.to_atom
+  end
 
   defp print_new_connection(socket) do
     IO.puts "new connection from"
@@ -28,9 +38,9 @@ defmodule Remixdb.Client do
     end
   end
 
-  defp serve(socket, parser) do
+  defp serve(socket) do
     import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_integer_response: 2]
-    case get_parser_response(parser) do
+    case get_parser_response() do
       :dbsize ->
         val = Remixdb.KeyHandler.dbsize()
         socket |> send_integer_response(val)
@@ -52,13 +62,11 @@ defmodule Remixdb.Client do
             socket |> send_val(val)
         end
     end
-    socket |> serve(parser)
+    socket |> serve
   end
 
-  defp get_parser_response(parser) do
-    receive do
-      {^parser, args} -> args
-    end
+  defp get_parser_response do
+    get_parser_name() |> Remixdb.Parser.read
   end
 
   defp store_sock_info(socket) do
