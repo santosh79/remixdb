@@ -4,14 +4,12 @@ defmodule Remixdb.ResponseHandler do
     socket
   end
 
-  def send_val(socket, val) do
+  def send_response(socket, val) when is_bitstring(val) do
     val_bytes = val |> String.length |> Integer.to_string
     msg = "$" <> val_bytes <> "\r\n" <> val <> "\r\n"
     :gen_tcp.send socket, msg
     socket
   end
-
-
   def send_response(socket, num) when is_integer(num) do
     response = ":" <> (num |> Integer.to_string) <> "\r\n"
     :gen_tcp.send socket, response

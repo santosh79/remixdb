@@ -28,7 +28,7 @@ defmodule Remixdb.Client do
   end
 
   defp serve(socket) do
-    import Remixdb.ResponseHandler, only: [send_ok: 1, send_nil: 1, send_val: 2, send_response: 2]
+    import Remixdb.ResponseHandler, only: [send_nil: 1, send_response: 2]
     case get_parser_response() do
       :flushall ->
         response = Remixdb.KeyHandler.flushall
@@ -51,7 +51,7 @@ defmodule Remixdb.Client do
           nil ->
             socket |> send_nil
           val ->
-            socket |> send_val(val)
+            socket |> send_response(val)
         end
     end
     socket |> serve
