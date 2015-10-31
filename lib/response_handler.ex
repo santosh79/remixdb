@@ -11,6 +11,9 @@ defmodule Remixdb.ResponseHandler do
     socket
   end
 
+  def send_response(socket, :ok) do
+    socket |> send_ok
+  end
   def send_ok(socket) do
     :gen_tcp.send socket, "+OK\r\n"
     socket

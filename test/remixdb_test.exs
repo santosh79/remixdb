@@ -7,7 +7,6 @@ defmodule RemixdbTest do
       :ok
     end
 
-    @tag :current
     test "exists" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       val = client |> Exredis.query ["EXISTS", "NON-EXISTENT-KEY"]
@@ -38,21 +37,23 @@ defmodule RemixdbTest do
     test "dbsize" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       prev_db_size = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
-      client |> Exredis.query ["SET", "A", "1"]
-      client |> Exredis.query ["SET", "B", "2"]
+      1..1_000 |> Enum.each(fn(x) ->
+        key = "temp_key" <> (x |> Integer.to_string)
+        client |> Exredis.query(["SET", key, x])
+      end)
       val = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
-      assert val === (prev_db_size + 2)
+      assert val === (prev_db_size + 1_000)
       client |> Exredis.stop
     end
 
-    @tag :skip
     test "flushall" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       client |> Exredis.query ["SET", "A", "1"]
       db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
       assert db_sz > 0
 
-      client |> Exredis.query ["FLUSHALL"]
+      val = client |> Exredis.query ["FLUSHALL"]
+      assert val === "OK"
       new_db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
       assert new_db_sz === 0
       # assert val === (prev_db_size + 2)

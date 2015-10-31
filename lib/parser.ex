@@ -35,6 +35,7 @@ defmodule Remixdb.Parser do
               "GET"    -> {:get, args}
               "EXISTS" -> {:exists, args}
               "DBSIZE" -> :dbsize
+              "FLUSHALL" -> :flushall
               cmd ->
                 IO.puts "Parser: unknown command: "
                 IO.inspect cmd

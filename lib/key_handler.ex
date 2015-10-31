@@ -1,5 +1,6 @@
 defmodule Remixdb.KeyHandler do
   def init do
+    Process.flag :trap_exit, true
     %{}
   end
 
@@ -19,8 +20,17 @@ defmodule Remixdb.KeyHandler do
     Remixdb.SimpleServer.rpc :remixdb_key_handler, :dbsize
   end
 
+  def flushall do
+    Remixdb.SimpleServer.rpc :remixdb_key_handler, :flushall
+  end
+
   def handle(request, state) do
     case request do
+      :flushall ->
+        state |> Dict.values |> Enum.each(fn(pid) ->
+          Process.exit(pid, :kill)
+        end)
+        {:ok, %{}}
       :dbsize ->
         count = state |> Dict.keys |> Enum.count
         {count, state}
@@ -42,6 +52,7 @@ defmodule Remixdb.KeyHandler do
           nil ->
             new_key = true
             Remixdb.SimpleServer.start key_name, Remixdb.String
+            Process.whereis key_name
           pid -> pid
         end
         Remixdb.String.set key_name, key, val
