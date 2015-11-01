@@ -30,6 +30,10 @@ defmodule Remixdb.Client do
   defp serve(socket) do
     import Remixdb.ResponseHandler, only: [send_nil: 1, send_response: 2]
     case get_parser_response() do
+      {:ping, []} ->
+        socket |> send_response("PONG")
+      {:ping, [res]} ->
+        socket |> send_response(res)
       :flushall ->
         response = Remixdb.KeyHandler.flushall
         socket |> send_response(response)

@@ -31,11 +31,12 @@ defmodule Remixdb.Parser do
           {:error, _reason} -> {:error, _reason}
           {:ok, [cmd|args]} ->
             case (cmd |> String.upcase) do
-              "SET"    -> {:set, args}
-              "GET"    -> {:get, args}
-              "EXISTS" -> {:exists, args}
-              "DBSIZE" -> :dbsize
+              "SET"      -> {:set, args}
+              "GET"      -> {:get, args}
+              "EXISTS"   -> {:exists, args}
+              "DBSIZE"   -> :dbsize
               "FLUSHALL" -> :flushall
+              "PING"     -> {:ping, args}
               cmd ->
                 IO.puts "Parser: unknown command: "
                 IO.inspect cmd
