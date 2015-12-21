@@ -46,12 +46,25 @@ defmodule RemixdbTest do
       client |> Exredis.stop
     end
 
-    @tag :current
     test "ping" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       val = client |> Exredis.query ["PING"]
       assert val === "PONG"
       val = client |> Exredis.query ["PING", "hello world"]
+      assert val === "hello world"
+    end
+
+    test "append - existing key" do
+      client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+      client |> Exredis.query ["FLUSHALL"]
+      val = client |> Exredis.query ["EXISTS", "mykey"]
+      assert val === "0"
+
+      val = client |> Exredis.query ["SET", "mykey", "hello"]
+      val = client |> Exredis.query ["APPEND", "mykey", " world"]
+      assert val === "11"
+
+      val = client |> Exredis.query ["GET", "mykey"]
       assert val === "hello world"
     end
 
