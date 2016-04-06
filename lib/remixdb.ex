@@ -21,8 +21,8 @@ defmodule Remixdb do
 
   defmodule Server do
     def start do
-      spawn TcpServer, :start_server, []
-      Remixdb.SimpleServer.start :remixdb_key_handler, Remixdb.KeyHandler
+      spawn_link TcpServer, :start_server, []
+      Remixdb.KeyHandler.start_link
     end
 
     def stop do
