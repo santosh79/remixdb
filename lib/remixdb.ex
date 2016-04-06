@@ -4,7 +4,6 @@ defmodule Remixdb do
       port = 6379
       {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
       IO.puts "Accepting connections on port: #{port}"
-      Remixdb.SimpleServer.start :remixdb_connection_handler, Remixdb.ClientHander
       Process.register self(), :remixdb_server
       loop_acceptor socket
     end
@@ -15,9 +14,7 @@ defmodule Remixdb do
 
     defp loop_acceptor(socket) do
       {:ok, client} = :gen_tcp.accept(socket)
-      spawn(fn ->
-        Remixdb.ClientHander.new_client :remixdb_connection_handler, client
-      end)
+      Remixdb.Client.start client
       loop_acceptor socket
     end
   end
