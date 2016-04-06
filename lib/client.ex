@@ -4,32 +4,16 @@ defmodule Remixdb.Client do
   end
 
   def loop(socket) do
-    socket |>
-    store_sock_info |>
-    print_new_connection |>
-    setup_socket
-  end
-
-  def setup_socket(socket) do
     stream = %Remixdb.Socket{socket: socket}
-    parser_name = get_parser_name()
-    Remixdb.SimpleServer.start parser_name, Remixdb.Parser, [stream]
-    serve socket
+    spawn_link Remixdb.Parser, :start, [stream, self]
+    socket |>
+    # print_new_connection |>
+    serve
   end
 
-  defp get_parser_name do
-    "remix_db_parser_for|" <> (self() |> :erlang.pid_to_list |> List.to_string) |> String.to_atom
-  end
-
-  defp print_new_connection(socket) do
-    IO.puts "new connection from"
-    print_sock_info
-    socket
-  end
-
-  defp serve(socket) do
+  def serve(socket) do
     import Remixdb.ResponseHandler, only: [send_nil: 1, send_response: 2]
-    case get_parser_response() do
+    receive do
       {:ping, []} ->
         socket |> send_response("PONG")
       {:ping, [res]} ->
@@ -64,19 +48,9 @@ defmodule Remixdb.Client do
     socket |> serve
   end
 
-  defp get_parser_response do
-    get_parser_name() |> Remixdb.Parser.read
-  end
-
-  defp store_sock_info(socket) do
-    peer_info = :inet.peername socket
-    case peer_info do
-      {:ok, {host_ip, port}} ->
-        IO.inspect host_ip
-        Process.put :remote_host, host_ip
-        Process.put :remote_port, port
-      {_} -> :void
-    end
+  defp print_new_connection(socket) do
+    IO.puts "new connection from"
+    print_sock_info
     socket
   end
 
