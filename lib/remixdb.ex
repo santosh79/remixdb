@@ -15,7 +15,9 @@ defmodule Remixdb do
 
     defp loop_acceptor(socket) do
       {:ok, client} = :gen_tcp.accept(socket)
-      Remixdb.ClientHander.new_client :remixdb_connection_handler, client
+      spawn(fn ->
+        Remixdb.ClientHander.new_client :remixdb_connection_handler, client
+      end)
       loop_acceptor socket
     end
   end
