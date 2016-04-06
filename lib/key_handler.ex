@@ -16,6 +16,10 @@ defmodule Remixdb.KeyHandler do
     Remixdb.SimpleServer.rpc :remixdb_key_handler, {:set, key, val}
   end
 
+  def append(key, val) do
+    Remixdb.SimpleServer.rpc :remixdb_key_handler, {:append, key, val}
+  end
+
   def dbsize do
     Remixdb.SimpleServer.rpc :remixdb_key_handler, :dbsize
   end
@@ -45,6 +49,11 @@ defmodule Remixdb.KeyHandler do
             Remixdb.String.get(key)
         end
         {val, state}
+      {:append, key, val} ->
+        key_name = key |> get_key_name
+        new_val = Remixdb.String.append key_name, key, val
+        string_length = new_val |> String.length
+        {string_length, state}
       {:set, key, val} ->
         key_name = key |> get_key_name
         new_key = false

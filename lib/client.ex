@@ -47,6 +47,9 @@ defmodule Remixdb.Client do
           true ->
             socket |> send_response(1)
         end
+      {:append, [key, val]} ->
+        response = Remixdb.KeyHandler.append key, val
+        socket |> send_response(response)
       {:set, [key, val]} ->
         response = Remixdb.KeyHandler.set key, val
         socket |> send_response(response)

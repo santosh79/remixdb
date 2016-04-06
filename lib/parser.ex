@@ -32,6 +32,7 @@ defmodule Remixdb.Parser do
           {:ok, [cmd|args]} ->
             case (cmd |> String.upcase) do
               "SET"      -> {:set, args}
+              "APPEND"   -> {:append, args}
               "GET"      -> {:get, args}
               "EXISTS"   -> {:exists, args}
               "DBSIZE"   -> :dbsize
