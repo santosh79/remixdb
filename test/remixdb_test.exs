@@ -27,6 +27,21 @@ defmodule RemixdbTest do
       client |> Exredis.stop
     end
 
+    test "getset" do
+      client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+      client |> Exredis.query ["FLUSHALL"]
+
+      val = client |> Exredis.query ["GETSET", "FOO", "HEY"]
+      assert val === :undefined
+
+      val = client |> Exredis.query ["GETSET", "FOO", "BYE"]
+      assert val === "HEY"
+
+      val = client |> Exredis.query ["GET", "FOO"]
+      assert val === "BYE"
+      client |> Exredis.stop
+    end
+
     test "get non-existent key" do
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       val = client |> Exredis.query ["GET", "NON-EXISTENT-KEY"]
