@@ -12,7 +12,7 @@ defmodule Remixdb.Client do
   end
 
   def serve(socket) do
-    import Remixdb.ResponseHandler, only: [send_nil: 1, send_response: 2]
+    import Remixdb.ResponseHandler, only: [send_response: 2]
     receive do
       {:ping, []} ->
         socket |> send_response("PONG")
@@ -35,18 +35,20 @@ defmodule Remixdb.Client do
         pid = Remixdb.KeyHandler.get_or_create_pid :string, key
         response = Remixdb.String.append pid, val
         socket |> send_response(response)
+      {:getset, [key, val]} ->
+        pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.getset pid, val
+        socket |> send_response(response)
       {:set, [key, val]} ->
         pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
         response = Remixdb.String.set pid, val
         socket |> send_response(response)
       {:get, [key]} ->
-        case Remixdb.KeyHandler.get_pid(:string, key) do
-          nil ->
-            socket |> send_nil
-          pid ->
-            val = Remixdb.String.get pid
-            socket |> send_response(val)
+        val = case Remixdb.KeyHandler.get_pid(:string, key) do
+          nil -> nil
+          pid -> val = Remixdb.String.get(pid)
         end
+        socket |> send_response(val)
     end
     socket |> serve
   end

@@ -25,6 +25,7 @@ defmodule Remixdb.Parser do
               "SET"      -> {:set, args}
               "APPEND"   -> {:append, args}
               "GET"      -> {:get, args}
+              "GETSET"   -> {:getset, args}
               "EXISTS"   -> {:exists, args}
               "DBSIZE"   -> :dbsize
               "FLUSHALL" -> :flushall
