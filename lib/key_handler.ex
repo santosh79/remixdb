@@ -14,16 +14,12 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:exists, key}
   end
 
-  def get(key) do
-    GenServer.call :remixdb_key_handler, {:get, key}
+  def get_pid(:string, key) do
+    GenServer.call :remixdb_key_handler, {:get_pid, key}
   end
 
-  def set(key, val) do
-    GenServer.call :remixdb_key_handler, {:set, key, val}
-  end
-
-  def append(key, val) do
-    GenServer.call :remixdb_key_handler, {:append, key, val}
+  def get_or_create_pid(:string, key) do
+    GenServer.call :remixdb_key_handler, {:get_or_create_pid, key}
   end
 
   def dbsize do
@@ -34,44 +30,19 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, :flushall
   end
 
-  def handle_call({:append, key, val}, _from, state) do
-    key_name = key |> get_key_name
-    new_val = Remixdb.String.append key_name, key, val
-    string_length = new_val |> String.length
-    {:reply, string_length, state}
+  def handle_call({:get_pid, key}, _from, state) do
+    pid = lookup_pid(state, key)
+    {:reply, pid, state}
   end
 
-  def handle_call({:set, key, val}, _from, state) do
-    key_name = key |> get_key_name
-    new_key = false
-    key_pid = case (key |> get_key_pid) do
-      nil ->
-        new_key = true
-        Remixdb.SimpleServer.start key_name, Remixdb.String
-        Process.whereis key_name
-        pid -> pid
-    end
-    Remixdb.String.set key_name, key, val
-    new_state = case new_key do
-      true ->
-        Dict.put(state, key_name, key_pid)
-        false -> state
-    end
-    {:reply, :ok, new_state}
-  end
-
-  def handle_call({:get, key}, _from, state) do
-    val = case(key |> get_key_pid) do
-      nil -> nil
-      key_pid -> 
-      key |> get_key_name |>
-      Remixdb.String.get(key)
-    end
-    {:reply, val, state}
+  def handle_call({:get_or_create_pid, key}, _from, state) do
+    pid           = create_pid_if_not_exists?(state, key)
+    updated_state = Dict.put(state, key, pid)
+    {:reply, pid, updated_state}
   end
 
   def handle_call({:exists, key}, _from, state) do
-    val = !!(key |> get_key_pid)
+    val = !! lookup_pid(state, key)
     {:reply, val, state}
   end
 
@@ -87,12 +58,18 @@ defmodule Remixdb.KeyHandler do
     {:reply, :ok, %{}}
   end
 
-  defp get_key_pid(key) do
-    key |> get_key_name |> Process.whereis
+  defp lookup_pid(state, key) do
+    Dict.get(state, key)
   end
 
-  defp get_key_name(key) do
-    ("remixdb_string|" <> key) |> String.to_atom
+  defp create_pid_if_not_exists?(state, key) do
+    case lookup_pid(state, key) do
+      nil ->
+        {:ok, pid} = Remixdb.String.start_link
+        pid
+      p -> p
+    end
   end
+
 end
 

@@ -32,16 +32,19 @@ defmodule Remixdb.Client do
             socket |> send_response(1)
         end
       {:append, [key, val]} ->
-        response = Remixdb.KeyHandler.append key, val
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.append pid, val
         socket |> send_response(response)
       {:set, [key, val]} ->
-        response = Remixdb.KeyHandler.set key, val
+        pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.set pid, val
         socket |> send_response(response)
       {:get, [key]} ->
-        case Remixdb.KeyHandler.get(key) do
+        case Remixdb.KeyHandler.get_pid(:string, key) do
           nil ->
             socket |> send_nil
-          val ->
+          pid ->
+            val = Remixdb.String.get pid
             socket |> send_response(val)
         end
     end
