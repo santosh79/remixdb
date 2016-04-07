@@ -61,7 +61,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query ["APPEND", "foo", "bar"]
       assert val === "3"
 
-      val = client |> Exredis.query ["GET", "mykey"]
+      val = client |> Exredis.query ["GET", "foo"]
       assert val === "bar"
     end
 
