@@ -86,6 +86,25 @@ defmodule RemixdbTest do
       assert val === "15"
     end
 
+    test "DECR", %{client: client} do
+      val = client |> Exredis.query(["DECR", "counter"])
+      assert val === "-1"
+
+      client |> Exredis.query(["INCR", "counter"])
+      client |> Exredis.query(["INCR", "counter"])
+      val = client |> Exredis.query(["DECR", "counter"])
+      assert val === "0"
+    end
+
+    test "DECRBY", %{client: client} do
+      val = client |> Exredis.query(["DECRBY", "counter", 5])
+      assert val === "-5"
+
+      client |> Exredis.query(["INCRBY", "counter", 10])
+      val = client |> Exredis.query(["DECRBY", "counter", 5])
+      assert val === "0"
+    end
+
     test "append - existing key", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["APPEND", "mykey", " world"])
