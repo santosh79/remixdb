@@ -114,6 +114,24 @@ defmodule RemixdbTest do
       assert val === "hello world"
     end
 
+    test "SETEX & TTL", %{client: client} do
+      val = client |> Exredis.query(["SETEX", "mykey", 1, "hello"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["TTL", "mykey"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["GET", "mykey"])
+      assert val === "hello"
+
+      :timer.sleep 2_000
+      val = client |> Exredis.query(["GET", "mykey"])
+      assert val === :undefined
+
+      val = client |> Exredis.query(["TTL", "mykey"])
+      assert val === "-2"
+    end
+
     test "flushall", %{client: client} do
       client |> Exredis.query(["SET", "A", "1"])
       db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
