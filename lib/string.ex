@@ -20,6 +20,14 @@ defmodule Remixdb.String do
     GenServer.call(name, {:set, val})
   end
 
+  def incr(name) do
+    GenServer.call(name, :incr)
+  end
+
+  def incrby(name, val) do
+    GenServer.call(name, {:incrby, val})
+  end
+
   def append(name, val) do
     GenServer.call(name, {:append, val})
   end
@@ -34,6 +42,24 @@ defmodule Remixdb.String do
 
   def handle_call({:set, val}, _from, old_val) do
     {:reply, :ok, val}
+  end
+
+  def handle_call({:incrby, val_str}, _from, :undefined) do
+    val = val_str |> String.to_integer
+    {:reply, val, val}
+  end
+  def handle_call({:incrby, val_str}, _from, old_val) do
+    val     = val_str |> String.to_integer
+    new_val = old_val + val
+    {:reply, new_val, new_val}
+  end
+
+  def handle_call(:incr, _from, :undefined) do
+    {:reply, 1, 1}
+  end
+  def handle_call(:incr, _from, old_val) do
+    new_val = old_val + 1
+    {:reply, new_val, new_val}
   end
 
   def handle_call({:append, new_val}, _from, :undefined) do

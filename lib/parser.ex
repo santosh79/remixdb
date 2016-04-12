@@ -30,6 +30,8 @@ defmodule Remixdb.Parser do
               "DBSIZE"   -> :dbsize
               "FLUSHALL" -> :flushall
               "PING"     -> {:ping, args}
+              "INCR"     -> {:incr, args}
+              "INCRBY"   -> {:incrby, args}
               cmd ->
                 IO.puts "Parser: unknown command: "
                 IO.inspect cmd

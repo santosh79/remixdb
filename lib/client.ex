@@ -43,6 +43,14 @@ defmodule Remixdb.Client do
         pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
         response = Remixdb.String.set pid, val
         socket |> send_response(response)
+      {:incrby, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.incrby pid, val
+        socket |> send_response(response)
+      {:incr, [key]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.incr pid
+        socket |> send_response(response)
       {:get, [key]} ->
         val = case Remixdb.KeyHandler.get_pid(:string, key) do
           nil -> nil
