@@ -8,7 +8,25 @@ defmodule Remixdb.Parser do
     case read_new_command(stream) do
       {:error, reason} ->
         IO.puts "parser bad request #{inspect reason}"
-      response ->
+      {:ok, [cmd|args]} ->
+        response = case (cmd |> String.upcase) do
+          "SET"      -> {:set, args}
+          "APPEND"   -> {:append, args}
+          "GET"      -> {:get, args}
+          "GETSET"   -> {:getset, args}
+          "EXISTS"   -> {:exists, args}
+          "DBSIZE"   -> :dbsize
+          "FLUSHALL" -> :flushall
+          "PING"     -> {:ping, args}
+          "INCR"     -> {:incr, args}
+          "DECR"     -> {:decr, args}
+          "DECRBY"   -> {:decrby, args}
+          "INCRBY"   -> {:incrby, args}
+          cmd ->
+            IO.puts "Parser: unknown command: "
+            IO.inspect cmd
+            nil
+        end
         send client, response
         loop stream, client
     end
@@ -18,27 +36,7 @@ defmodule Remixdb.Parser do
     case read_number_args(stream) do
       {:error, reason} -> {:error, reason}
       {:ok, num_args} ->
-        case read_args(stream, num_args) do
-          {:error, reason} -> {:error, reason}
-          {:ok, [cmd|args]} ->
-            case (cmd |> String.upcase) do
-              "SET"      -> {:set, args}
-              "APPEND"   -> {:append, args}
-              "GET"      -> {:get, args}
-              "GETSET"   -> {:getset, args}
-              "EXISTS"   -> {:exists, args}
-              "DBSIZE"   -> :dbsize
-              "FLUSHALL" -> :flushall
-              "PING"     -> {:ping, args}
-              "INCR"     -> {:incr, args}
-              "DECR"     -> {:decr, args}
-              "DECRBY"   -> {:decrby, args}
-              "INCRBY"   -> {:incrby, args}
-              cmd ->
-                IO.puts "Parser: unknown command: "
-                IO.inspect cmd
-            end
-        end
+        read_args stream, num_args
     end
   end
 
