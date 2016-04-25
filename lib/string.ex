@@ -5,7 +5,7 @@ defmodule Remixdb.String do
   end
 
   def init(:ok) do
-    {:ok, :undefined}
+    {:ok, %{val: :undefined}}
   end
 
   def get(pid) do
@@ -40,63 +40,68 @@ defmodule Remixdb.String do
     GenServer.call(name, {:append, val})
   end
 
-  def handle_call(:get, _from, val) do
-    {:reply, val, val}
+  def handle_call(:get, _from, state) do
+    %{val: val} = state
+    {:reply, val, state}
   end
 
-  def handle_call({:getset, val}, _from, old_val) do
-    {:reply, old_val, val}
+  def handle_call({:getset, val}, _from, state) do
+    %{val: old_val} = state
+    new_state       = Dict.put(state, :val, val)
+    {:reply, old_val, new_state}
   end
 
-  def handle_call({:set, val}, _from, old_val) do
-    {:reply, :ok, val}
+  def handle_call({:set, val}, _from, state) do
+    new_state = Dict.put(state, :val, val)
+    {:reply, :ok, new_state}
   end
 
-  def handle_call({:incrby, val_str}, _from, :undefined) do
-    val = val_str |> String.to_integer
-    {:reply, val, val}
-  end
-  def handle_call({:incrby, val_str}, _from, old_val) do
-    val     = val_str |> String.to_integer
-    new_val = old_val + val
-    {:reply, new_val, new_val}
-  end
-
-  def handle_call(:decr, _from, :undefined) do
-    {:reply, -1, -1}
-  end
-  def handle_call(:decr, _from, old_val) do
-    new_val = old_val - 1
-    {:reply, new_val, new_val}
+  def handle_call({:incrby, val_str}, _from, state) do
+    to_i = &String.to_integer/1
+    new_val = case Dict.get(state, :val) do
+      :undefined -> to_i.(val_str)
+      old_val    -> (old_val + to_i.(val_str))
+    end
+    new_state = Dict.put(state, :val, new_val)
+    {:reply, new_val, new_state}
   end
 
-  def handle_call({:decrby, val_str}, _from, :undefined) do
-    val = val_str |> String.to_integer
-    val = val * -1
-    {:reply, val, val}
-  end
-  def handle_call({:decrby, val_str}, _from, old_val) do
-    val     = val_str |> String.to_integer
-    new_val = old_val - val
-    {:reply, new_val, new_val}
+  def handle_call(:decr, _from, state) do
+    new_val = case Dict.get(state, :val) do
+      :undefined -> -1
+      old_val    -> old_val - 1
+    end
+    new_state = Dict.put(state, :val, new_val)
+    {:reply, new_val, new_state}
   end
 
-  def handle_call(:incr, _from, :undefined) do
-    {:reply, 1, 1}
-  end
-  def handle_call(:incr, _from, old_val) do
-    new_val = old_val + 1
-    {:reply, new_val, new_val}
+  def handle_call({:decrby, val_str}, _from, state) do
+    to_i = &String.to_integer/1
+    new_val = case Dict.get(state, :val) do
+      :undefined -> to_i.(val_str) * -1
+      old_val    -> (old_val - to_i.(val_str))
+    end
+    new_state = Dict.put(state, :val, new_val)
+    {:reply, new_val, new_state}
   end
 
-  def handle_call({:append, new_val}, _from, :undefined) do
+  def handle_call(:incr, _from, state) do
+    new_val = case Dict.get(state, :val) do
+      :undefined -> 1
+      old_val    -> old_val + 1
+    end
+    new_state = Dict.put(state, :val, new_val)
+    {:reply, new_val, new_state}
+  end
+
+  def handle_call({:append, val}, _from, state) do
+    new_val = case Dict.get(state, :val) do
+      :undefined -> val
+      old_val    -> (old_val <> val)
+    end
     string_length = new_val |> String.length
-    {:reply, string_length, new_val}
-  end
-  def handle_call({:append, val}, _from, old_val) do
-    new_val = old_val <> val
-    string_length = new_val |> String.length
-    {:reply, string_length, new_val}
+    new_state     = Dict.put(state, :val, new_val)
+    {:reply, string_length, new_state}
   end
 end
 
