@@ -1,7 +1,7 @@
 defmodule Remixdb.String do
   use GenServer
-  def start_link do
-    GenServer.start_link __MODULE__, :ok, []
+  def start do
+    GenServer.start __MODULE__, :ok, []
   end
 
   def init(:ok) do

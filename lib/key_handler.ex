@@ -65,7 +65,7 @@ defmodule Remixdb.KeyHandler do
   defp create_pid_if_not_exists?(state, key) do
     case lookup_pid(state, key) do
       nil ->
-        {:ok, pid} = Remixdb.String.start_link
+        {:ok, pid} = Remixdb.String.start
         pid
       p -> p
     end
