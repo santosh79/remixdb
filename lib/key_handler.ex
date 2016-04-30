@@ -30,6 +30,10 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, :flushall
   end
 
+  def remove(key) do
+    GenServer.cast :remixdb_key_handler, {:remove, key}
+  end
+
   def handle_call({:get_pid, key}, _from, state) do
     pid = lookup_pid(state, key)
     {:reply, pid, state}
@@ -56,6 +60,11 @@ defmodule Remixdb.KeyHandler do
       Process.exit(pid, :kill)
     end)
     {:reply, :ok, %{}}
+  end
+
+  def handle_cast({:remove, key}, state)  do
+    new_state = Dict.delete(state, key)
+    {:noreply, new_state}
   end
 
   defp lookup_pid(state, key) do

@@ -48,6 +48,10 @@ defmodule Remixdb.String do
     GenServer.call(name, :ttl)
   end
 
+  def expire(name) do
+    GenServer.stop(name, :expired)
+  end
+
   def handle_call(:get, _from, state) do
     %{val: val} = state
     {:reply, val, state}
@@ -120,6 +124,10 @@ defmodule Remixdb.String do
   def handle_call(:ttl, _from, state) do
     %{timeout: timeout} = state
     {:reply, timeout, state}
+  end
+
+  def terminate(:expired, _state) do
+    :ok
   end
 end
 

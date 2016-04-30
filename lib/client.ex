@@ -64,12 +64,18 @@ defmodule Remixdb.Client do
         pid = Remixdb.KeyHandler.get_or_create_pid :string, key
         Remixdb.String.incr pid
       {:get, [key]} ->
-        case Remixdb.KeyHandler.get_pid(:string, key) do
+        result = case Remixdb.KeyHandler.get_pid(:string, key) do
           nil -> nil
           pid -> Remixdb.String.get(pid)
         end
+        result
       {:setex, [key, timeout, val]} ->
         pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        spawn(fn ->
+          :timer.sleep(String.to_integer(timeout) * 1_000)
+          Remixdb.String.expire pid
+          Remixdb.KeyHandler.remove key
+        end)
         Remixdb.String.setex pid, timeout, val
       {:ttl, [key]} ->
         pid = Remixdb.KeyHandler.get_pid :string, key
