@@ -78,8 +78,10 @@ defmodule Remixdb.Client do
         end)
         Remixdb.String.setex pid, timeout, val
       {:ttl, [key]} ->
-        pid = Remixdb.KeyHandler.get_pid :string, key
-        Remixdb.String.ttl pid
+        case Remixdb.KeyHandler.get_pid(:string, key) do
+          nil -> -2
+          pid -> Remixdb.String.ttl(pid)
+        end
     end
   end
 end

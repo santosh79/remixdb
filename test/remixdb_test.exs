@@ -124,7 +124,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["GET", "mykey"])
       assert val === "hello"
 
-      :timer.sleep 2_000
+      :timer.sleep 1_500
       val = client |> Exredis.query(["GET", "mykey"])
       assert val === :undefined
 
