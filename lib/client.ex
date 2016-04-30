@@ -65,6 +65,14 @@ defmodule Remixdb.Client do
           pid -> val = Remixdb.String.get(pid)
         end
         socket |> send_response(val)
+      {:setex, [key, timeout, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        response = Remixdb.String.setex pid, timeout, val
+        socket |> send_response(response)
+      {:ttl, [key]} ->
+        pid      = Remixdb.KeyHandler.get_pid :string, key
+        response = Remixdb.String.ttl pid
+        socket |> send_response(response)
     end
     socket |> serve
   end

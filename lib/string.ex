@@ -40,6 +40,14 @@ defmodule Remixdb.String do
     GenServer.call(name, {:append, val})
   end
 
+  def setex(name, timeout, val) do
+    GenServer.call(name, {:setex, timeout, val})
+  end
+
+  def ttl(name) do
+    GenServer.call(name, :ttl)
+  end
+
   def handle_call(:get, _from, state) do
     %{val: val} = state
     {:reply, val, state}
@@ -102,6 +110,16 @@ defmodule Remixdb.String do
     string_length = new_val |> String.length
     new_state     = Dict.put(state, :val, new_val)
     {:reply, string_length, new_state}
+  end
+
+  def handle_call({:setex, timeout, val}, _from, state) do
+    new_state =  state |> Dict.merge(%{timeout: timeout, val: val})
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call(:ttl, _from, state) do
+    %{timeout: timeout} = state
+    {:reply, timeout, state}
   end
 end
 
