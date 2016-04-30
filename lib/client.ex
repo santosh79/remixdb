@@ -13,68 +13,8 @@ defmodule Remixdb.Client do
 
   def serve(socket) do
     import Remixdb.ResponseHandler, only: [send_response: 2]
-    receive do
-      {:ping, []} ->
-        socket |> send_response("PONG")
-      {:ping, [res]} ->
-        socket |> send_response(res)
-      :flushall ->
-        response = Remixdb.KeyHandler.flushall
-        socket |> send_response(response)
-      :dbsize ->
-        val = Remixdb.KeyHandler.dbsize()
-        socket |> send_response(val)
-      {:exists, [key]} ->
-        case Remixdb.KeyHandler.exists?(key) do
-          false ->
-            socket |> send_response(0)
-          true ->
-            socket |> send_response(1)
-        end
-      {:append, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.append pid, val
-        socket |> send_response(response)
-      {:getset, [key, val]} ->
-        pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.getset pid, val
-        socket |> send_response(response)
-      {:set, [key, val]} ->
-        pid      = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.set pid, val
-        socket |> send_response(response)
-      {:incrby, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.incrby pid, val
-        socket |> send_response(response)
-      {:decr, [key]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.decr pid
-        socket |> send_response(response)
-      {:decrby, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.decrby pid, val
-        socket |> send_response(response)
-      {:incr, [key]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.incr pid
-        socket |> send_response(response)
-      {:get, [key]} ->
-        val = case Remixdb.KeyHandler.get_pid(:string, key) do
-          nil -> nil
-          pid -> val = Remixdb.String.get(pid)
-        end
-        socket |> send_response(val)
-      {:setex, [key, timeout, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        response = Remixdb.String.setex pid, timeout, val
-        socket |> send_response(response)
-      {:ttl, [key]} ->
-        pid      = Remixdb.KeyHandler.get_pid :string, key
-        response = Remixdb.String.ttl pid
-        socket |> send_response(response)
-    end
-    socket |> serve
+    response = get_response
+    socket |> send_response(response) |> serve
   end
 
   defp print_new_connection(socket) do
@@ -89,6 +29,52 @@ defmodule Remixdb.Client do
     IO.puts "remote host: "
     IO.inspect remote_host
     IO.puts "and remote port: #{remote_port}"
+  end
+
+  defp get_response() do
+    receive do
+      {:ping, []} -> "PONG"
+      {:ping, [res]} -> res
+      :flushall -> Remixdb.KeyHandler.flushall
+      :dbsize -> Remixdb.KeyHandler.dbsize()
+      {:exists, [key]} ->
+        case Remixdb.KeyHandler.exists?(key) do
+          false -> 0
+          true -> 1
+        end
+      {:append, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.append pid, val
+      {:getset, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.getset pid, val
+      {:set, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.set pid, val
+      {:incrby, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.incrby pid, val
+      {:decr, [key]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.decr pid
+      {:decrby, [key, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.decrby pid, val
+      {:incr, [key]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.incr pid
+      {:get, [key]} ->
+        case Remixdb.KeyHandler.get_pid(:string, key) do
+          nil -> nil
+          pid -> Remixdb.String.get(pid)
+        end
+      {:setex, [key, timeout, val]} ->
+        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
+        Remixdb.String.setex pid, timeout, val
+      {:ttl, [key]} ->
+        pid = Remixdb.KeyHandler.get_pid :string, key
+        Remixdb.String.ttl pid
+    end
   end
 end
 

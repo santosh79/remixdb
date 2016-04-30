@@ -17,6 +17,7 @@ defmodule Remixdb.ResponseHandler do
   def send_response(socket, num) when is_integer(num) do
     response = ":" <> (num |> Integer.to_string) <> "\r\n"
     :gen_tcp.send socket, response
+    socket
   end
 
   def send_response(socket, :ok) do
