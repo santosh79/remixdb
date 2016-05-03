@@ -114,6 +114,7 @@ defmodule RemixdbTest do
       assert val === "hello world"
     end
 
+    @tag slow: true
     test "SETEX & TTL", %{client: client} do
       val = client |> Exredis.query(["SETEX", "mykey", 1, "hello"])
       assert val === "OK"
@@ -147,6 +148,50 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["RENAME", "unknown_key", "bar"])
       assert val === "ERR no such key"
+    end
+
+    @tag slow: true, current: true
+    test "EXPIRE", %{client: client} do
+      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["EXPIRE", "mykey", 1])
+      assert val === "1"
+
+      val = client |> Exredis.query(["TTL", "mykey"])
+      assert val === "1"
+
+      :timer.sleep 1_200
+      val = client |> Exredis.query(["TTL", "mykey"])
+      assert val === "-2"
+
+      val = client |> Exredis.query(["GET", "mykey"])
+      assert val === :undefined
+    end
+
+    @tag slow: true
+    test "PERSIST", %{client: client} do
+      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["EXPIRE", "mykey", 1])
+      assert val === "1"
+
+      val = client |> Exredis.query(["PERSIST", "mykey"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["TTL", "mykey"])
+      assert val === "-1"
+
+      :timer.sleep 1_200
+      val = client |> Exredis.query(["GET", "mykey"])
+      assert val === "hello"
+
+      val = client |> Exredis.query(["PERSIST", "unknown_key"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["TTL", "unknown_key"])
+      assert val === "-2"
     end
 
     test "flushall", %{client: client} do
