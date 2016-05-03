@@ -34,6 +34,10 @@ defmodule Remixdb.KeyHandler do
     GenServer.cast :remixdb_key_handler, {:remove, key}
   end
 
+  def rename_key(old_name, new_name) do
+    GenServer.call :remixdb_key_handler, {:rename_key, old_name, new_name}
+  end
+
   def handle_call({:get_pid, key}, _from, state) do
     pid = lookup_pid(state, key)
     {:reply, pid, state}
@@ -65,6 +69,16 @@ defmodule Remixdb.KeyHandler do
   def handle_cast({:remove, key}, state)  do
     new_state = Dict.delete(state, key)
     {:noreply, new_state}
+  end
+
+  def handle_call({:rename_key, old_name, new_name}, _from, state)  do
+    case Dict.get(state, old_name) do
+      nil ->
+        {:reply, "ERR no such key", state}
+      pid ->
+        new_state = state |> Dict.drop([old_name]) |> Dict.put(new_name, pid)
+        {:reply, :ok, new_state}
+    end
   end
 
   defp lookup_pid(state, key) do

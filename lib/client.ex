@@ -82,6 +82,8 @@ defmodule Remixdb.Client do
           nil -> -2
           pid -> Remixdb.String.ttl(pid)
         end
+      {:rename, [old_name, new_name]} ->
+        Remixdb.KeyHandler.rename_key(old_name, new_name)
     end
   end
 end

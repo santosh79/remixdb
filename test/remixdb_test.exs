@@ -132,6 +132,23 @@ defmodule RemixdbTest do
       assert val === "-2"
     end
 
+    test "RENAME", %{client: client} do
+      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["RENAME", "mykey", "foo"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["GET", "foo"])
+      assert val === "hello"
+
+      val = client |> Exredis.query(["GET", "mykey"])
+      assert val === :undefined
+
+      val = client |> Exredis.query(["RENAME", "unknown_key", "bar"])
+      assert val === "ERR no such key"
+    end
+
     test "flushall", %{client: client} do
       client |> Exredis.query(["SET", "A", "1"])
       db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer

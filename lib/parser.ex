@@ -24,6 +24,7 @@ defmodule Remixdb.Parser do
           "INCRBY"   -> {:incrby, args}
           "SETEX"    -> {:setex, args}
           "TTL"      -> {:ttl, args}
+          "RENAME"   -> {:rename, args}
           cmd ->
             IO.puts "Parser: unknown command: "
             IO.inspect cmd
