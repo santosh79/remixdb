@@ -1,11 +1,11 @@
 defmodule Remixdb.String do
   use GenServer
-  def start do
-    GenServer.start __MODULE__, :ok, []
+  def start(key_name) do
+    GenServer.start __MODULE__, {:ok, key_name}, []
   end
 
-  def init(:ok) do
-    {:ok, %{val: :undefined}}
+  def init({:ok, key_name}) do
+    {:ok, %{val: :undefined, key_name: key_name}}
   end
 
   def get(pid) do
@@ -40,7 +40,8 @@ defmodule Remixdb.String do
     GenServer.call(name, {:append, val})
   end
 
-  def setex(name, timeout, val) do
+  def setex(name, timeout_str, val) do
+    timeout = timeout_str |> String.to_integer
     GenServer.call(name, {:setex, timeout, val})
   end
 
@@ -48,8 +49,11 @@ defmodule Remixdb.String do
     GenServer.call(name, :ttl)
   end
 
-  def expire(name) do
-    GenServer.stop(name, :expired)
+  def expire_with_no_response(name, timeout) do
+    spawn(fn ->
+      timeout |> :timer.sleep
+      GenServer.stop(name, :expired)
+    end)
   end
 
   def handle_call(:get, _from, state) do
@@ -117,6 +121,7 @@ defmodule Remixdb.String do
   end
 
   def handle_call({:setex, timeout, val}, _from, state) do
+    Remixdb.String.expire_with_no_response self, timeout
     new_state =  state |> Dict.merge(%{timeout: timeout, val: val})
     {:reply, :ok, new_state}
   end
@@ -126,7 +131,8 @@ defmodule Remixdb.String do
     {:reply, timeout, state}
   end
 
-  def terminate(:expired, _state) do
+  def terminate(:expired, %{key_name: key_name}) do
+    Remixdb.KeyHandler.remove key_name
     :ok
   end
 end
