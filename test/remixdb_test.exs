@@ -161,6 +161,22 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
+    @tag current: true
+    test "LPOP & RPUSH", %{client: client} do
+      val = client |> Exredis.query(["RPUSH", "mylist", "one",  "two"])
+      assert val === "2"
+      val = client |> Exredis.query(["RPUSH", "mylist", "three"])
+      assert val === "3"
+
+      val = client |> Exredis.query(["LPOP", "mylist"])
+      assert val === "one"
+
+      client |> Exredis.query(["LPOP", "mylist"])
+      client |> Exredis.query(["LPOP", "mylist"])
+      val = client |> Exredis.query(["LPOP", "mylist"])
+      assert val === :undefined
+    end
+
     @tag slow: true, skip: true
     test "EXPIRE", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
