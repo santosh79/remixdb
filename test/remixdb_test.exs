@@ -135,8 +135,6 @@ defmodule RemixdbTest do
 
     test "RENAME", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
-      assert val === "OK"
-
       val = client |> Exredis.query(["RENAME", "mykey", "foo"])
       assert val === "OK"
 
@@ -150,7 +148,20 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
-    @tag slow: true, current: true
+    test "RENAMENX", %{client: client} do
+      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      val = client |> Exredis.query(["RENAMENX", "mykey", "foo"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      val = client |> Exredis.query(["RENAMENX", "foo", "mykey"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["RENAMENX", "unknown_key", "something"])
+      assert val === "ERR no such key"
+    end
+
+    @tag slow: true, skip: true
     test "EXPIRE", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
       assert val === "OK"
@@ -169,7 +180,7 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    @tag slow: true
+    @tag slow: true, skip: true
     test "PERSIST", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
       assert val === "OK"

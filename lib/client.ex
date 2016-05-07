@@ -79,6 +79,8 @@ defmodule Remixdb.Client do
         end
       {:rename, [old_name, new_name]} ->
         Remixdb.KeyHandler.rename_key(old_name, new_name)
+      {:renamenx, [old_name, new_name]} ->
+        Remixdb.KeyHandler.renamenx_key(old_name, new_name)
     end
   end
 end
