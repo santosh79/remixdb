@@ -120,6 +120,7 @@ defmodule Remixdb.String do
     {:reply, string_length, new_state}
   end
 
+  # SantoshTODO: Mixin Termination stuff
   def handle_call({:setex, timeout, val}, _from, state) do
     Remixdb.String.expire_with_no_response self, timeout
     new_state =  state |> Dict.merge(%{timeout: timeout, val: val})

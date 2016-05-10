@@ -18,8 +18,16 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:get_pid, :string, key}
   end
 
+  def get_pid(:list, key) do
+    GenServer.call :remixdb_key_handler, {:get_pid, :list, key}
+  end
+
   def get_or_create_pid(:string, key) do
     GenServer.call :remixdb_key_handler, {:get_or_create_pid, :string, key}
+  end
+
+  def get_or_create_pid(:list, key) do
+    GenServer.call :remixdb_key_handler, {:get_or_create_pid, :list, key}
   end
 
   def dbsize do
@@ -42,13 +50,20 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:renamenx_key, old_name, new_name}
   end
 
+  def handle_call({:get_pid, :list, key}, _from, state) do
+    do_lookup state, key
+  end
   def handle_call({:get_pid, :string, key}, _from, state) do
+    do_lookup state, key
+  end
+
+  defp do_lookup(state, key) do
     pid = lookup_pid(state, key)
     {:reply, pid, state}
   end
 
-  def handle_call({:get_or_create_pid, :string, key}, _from, state) do
-    pid           = create_pid_if_not_exists?(:string, state, key)
+  def handle_call({:get_or_create_pid, type_of_key, key}, _from, state) do
+    pid           = create_pid_if_not_exists?(type_of_key, state, key)
     updated_state = Dict.put(state, key, pid)
     {:reply, pid, updated_state}
   end
@@ -105,6 +120,7 @@ defmodule Remixdb.KeyHandler do
       nil ->
         key_type = case type_of_key do
           :string -> Remixdb.String
+          :list   -> Remixdb.List
         end
         {:ok, pid} = key_type.start(key)
         pid
