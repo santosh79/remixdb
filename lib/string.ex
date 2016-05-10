@@ -45,6 +45,7 @@ defmodule Remixdb.String do
     GenServer.call(name, {:setex, timeout, val})
   end
 
+  def ttl(nil) do; -2; end
   def ttl(name) do
     GenServer.call(name, :ttl)
   end
@@ -52,7 +53,7 @@ defmodule Remixdb.String do
   def expire_with_no_response(name, timeout) do
     spawn(fn ->
       timeout |> :timer.sleep
-      GenServer.stop(name, :expired)
+      GenServer.stop(name, :normal)
     end)
   end
 
@@ -132,7 +133,7 @@ defmodule Remixdb.String do
     {:reply, timeout, state}
   end
 
-  def terminate(:expired, %{key_name: key_name}) do
+  def terminate(:normal, %{key_name: key_name}) do
     Remixdb.KeyHandler.remove key_name
     :ok
   end

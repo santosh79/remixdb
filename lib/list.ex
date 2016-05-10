@@ -12,8 +12,26 @@ defmodule Remixdb.List do
     GenServer.call(name, {:rpush, items})
   end
 
+  def lpop(nil) do; :undefined; end
   def lpop(name) do
     GenServer.call(name, :lpop)
+  end
+
+  def llen(nil) do; 0; end
+  def llen(name) do
+    GenServer.call(name, :llen)
+  end
+
+  def popped_out(name) do
+    spawn(fn ->
+      GenServer.stop(name, :normal)
+    end)
+  end
+
+  def handle_call(:llen, _from, state) do
+    %{items: items} = state
+    list_sz = items |> Enum.count
+    {:reply, list_sz, state}
   end
 
   def handle_call({:rpush, new_items}, _from, state) do
@@ -26,7 +44,9 @@ defmodule Remixdb.List do
 
   def handle_call(:lpop, _from, state) do
     {head, updated_items} = case Dict.get(state, :items) do
-      []    -> {:undefined, []}
+      []    ->
+        Remixdb.List.popped_out self
+        {:undefined, []}
       [h|t] -> {h, t}
     end
     new_state = Dict.merge(state, %{items: updated_items})
@@ -34,4 +54,8 @@ defmodule Remixdb.List do
   end
 
   # SantoshTODO: Mixin Termination stuff
+  def terminate(:normal, %{key_name: key_name}) do
+    Remixdb.KeyHandler.remove key_name
+    :ok
+  end
 end

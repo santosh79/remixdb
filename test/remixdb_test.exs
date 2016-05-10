@@ -161,10 +161,16 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
-    test "LPOP & RPUSH", %{client: client} do
+    test "LPOP, RPUSH & LLEN", %{client: client} do
+      val = client |> Exredis.query(["LLEN", "mylist"])
+      assert val === "0"
+
       val = client |> Exredis.query(["RPUSH", "mylist", "one",  "two"])
       assert val === "2"
       val = client |> Exredis.query(["RPUSH", "mylist", "three"])
+      assert val === "3"
+
+      val = client |> Exredis.query(["LLEN", "mylist"])
       assert val === "3"
 
       val = client |> Exredis.query(["LPOP", "mylist"])
@@ -173,6 +179,12 @@ defmodule RemixdbTest do
       client |> Exredis.query(["LPOP", "mylist"])
       client |> Exredis.query(["LPOP", "mylist"])
       val = client |> Exredis.query(["LPOP", "mylist"])
+      assert val === :undefined
+
+      val = client |> Exredis.query(["EXISTS", "mylist"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["LPOP", "unknown_list"])
       assert val === :undefined
     end
 

@@ -73,20 +73,18 @@ defmodule Remixdb.Client do
         pid = Remixdb.KeyHandler.get_or_create_pid :string, key
         Remixdb.String.setex pid, timeout, val
       {:ttl, [key]} ->
-        case Remixdb.KeyHandler.get_pid(:string, key) do
-          nil -> -2
-          pid -> Remixdb.String.ttl(pid)
-        end
+        Remixdb.KeyHandler.get_pid(:string, key) |> Remixdb.String.ttl
       {:rename, [old_name, new_name]} ->
         Remixdb.KeyHandler.rename_key(old_name, new_name)
       {:renamenx, [old_name, new_name]} ->
         Remixdb.KeyHandler.renamenx_key(old_name, new_name)
       {:rpush, [key|items]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :list, key
-        Remixdb.List.rpush pid, items
+        Remixdb.KeyHandler.get_or_create_pid(:list, key) |>
+        Remixdb.List.rpush(items)
       {:lpop, [key]} ->
-        pid = Remixdb.KeyHandler.get_pid :list, key
-        Remixdb.List.lpop pid
+        Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.lpop
+      {:llen, [key]} ->
+        Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.llen
     end
   end
 end

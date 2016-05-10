@@ -28,6 +28,7 @@ defmodule Remixdb.Parser do
           "RENAMENX" -> {:renamenx, args}
           "RPUSH"    -> {:rpush, args}
           "LPOP"     -> {:lpop, args}
+          "LLEN"     -> {:llen, args}
           cmd ->
             IO.puts "Parser: unknown command: "
             IO.inspect cmd
