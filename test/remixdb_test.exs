@@ -161,6 +161,27 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
+    test "RPOP & LPUSH", %{client: client} do
+      val = client |> Exredis.query(["RPUSH", "mylist", "three", "four", "five", "six"])
+      assert val === "4"
+
+      val = client |> Exredis.query(["LPUSH", "mylist", "two"])
+      val = client |> Exredis.query(["LPUSH", "mylist", "one"])
+      assert val === "6"
+
+      val = client |> Exredis.query(["RPOP", "mylist"])
+      assert val === "six"
+
+      val = client |> Exredis.query(["LPOP", "mylist"])
+      assert val === "one"
+
+      (1..4) |> Enum.to_list |> Enum.each(fn(_x) ->
+        client |> Exredis.query(["LPOP", "mylist"])
+      end)
+      val = client |> Exredis.query(["LPOP", "mylist"])
+      assert val === :undefined
+    end
+
     test "LPOP, RPUSH & LLEN", %{client: client} do
       val = client |> Exredis.query(["LLEN", "mylist"])
       assert val === "0"

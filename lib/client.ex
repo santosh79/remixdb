@@ -81,8 +81,13 @@ defmodule Remixdb.Client do
       {:rpush, [key|items]} ->
         Remixdb.KeyHandler.get_or_create_pid(:list, key) |>
         Remixdb.List.rpush(items)
+      {:lpush, [key|items]} ->
+        Remixdb.KeyHandler.get_or_create_pid(:list, key) |>
+        Remixdb.List.lpush(items)
       {:lpop, [key]} ->
         Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.lpop
+      {:rpop, [key]} ->
+        Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.rpop
       {:llen, [key]} ->
         Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.llen
     end
