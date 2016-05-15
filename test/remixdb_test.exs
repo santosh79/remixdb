@@ -175,11 +175,32 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LPOP", "mylist"])
       assert val === "one"
 
-      (1..4) |> Enum.to_list |> Enum.each(fn(_x) ->
+      (1..4) |> Enum.each(fn(_x) ->
         client |> Exredis.query(["LPOP", "mylist"])
       end)
       val = client |> Exredis.query(["LPOP", "mylist"])
       assert val === :undefined
+    end
+
+    @tag current: true
+    test "LPUSHX & RPUSHX", %{client: client} do
+      val = client |> Exredis.query(["LPUSH", "mylist", "world"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["LPUSHX", "mylist", "Hello"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["LPUSHX", "unknown_list", "Hello"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["LLEN", "mylist"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["LLEN", "unknown_list"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["EXISTS", "unknown_list"])
+      assert val === "0"
     end
 
     test "LPOP, RPUSH & LLEN", %{client: client} do
