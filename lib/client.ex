@@ -43,35 +43,32 @@ defmodule Remixdb.Client do
           true -> 1
         end
       {:append, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.append pid, val
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.append(val)
       {:getset, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.getset pid, val
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.getset(val)
       {:set, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.set pid, val
+         Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.set(val)
       {:incrby, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.incrby pid, val
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.incrby(val)
       {:decr, [key]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.decr pid
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.decr
       {:decrby, [key, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.decrby pid, val
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.decrby(val)
       {:incr, [key]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.incr pid
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.incr
       {:get, [key]} ->
-        result = case Remixdb.KeyHandler.get_pid(:string, key) do
-          nil -> nil
-          pid -> Remixdb.String.get(pid)
-        end
-        result
+        Remixdb.KeyHandler.get_pid(:string, key) |>
+        Remixdb.String.get
       {:setex, [key, timeout, val]} ->
-        pid = Remixdb.KeyHandler.get_or_create_pid :string, key
-        Remixdb.String.setex pid, timeout, val
+        Remixdb.KeyHandler.get_or_create_pid(:string, key) |>
+        Remixdb.String.setex(timeout, val)
       {:ttl, [key]} ->
         Remixdb.KeyHandler.get_pid(:string, key) |> Remixdb.String.ttl
       {:rename, [old_name, new_name]} ->

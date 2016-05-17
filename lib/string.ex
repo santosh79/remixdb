@@ -8,6 +8,8 @@ defmodule Remixdb.String do
     {:ok, %{val: :undefined, key_name: key_name}}
   end
 
+
+  def get(nil) do; nil; end
   def get(pid) do
     GenServer.call(pid, :get)
   end
