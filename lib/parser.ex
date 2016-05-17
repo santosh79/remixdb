@@ -27,7 +27,9 @@ defmodule Remixdb.Parser do
           "RENAME"   -> {:rename, args}
           "RENAMENX" -> {:renamenx, args}
           "RPUSH"    -> {:rpush, args}
+          "RPUSHX"   -> {:rpushx, args}
           "LPUSH"    -> {:lpush, args}
+          "LPUSHX"   -> {:lpushx, args}
           "LPOP"     -> {:lpop, args}
           "RPOP"     -> {:rpop, args}
           "LLEN"     -> {:llen, args}

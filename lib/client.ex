@@ -75,9 +75,15 @@ defmodule Remixdb.Client do
         Remixdb.KeyHandler.rename_key(old_name, new_name)
       {:renamenx, [old_name, new_name]} ->
         Remixdb.KeyHandler.renamenx_key(old_name, new_name)
+      {:rpushx, [key|items]} ->
+        Remixdb.KeyHandler.get_pid(:list, key) |>
+        Remixdb.List.rpushx(items)
       {:rpush, [key|items]} ->
         Remixdb.KeyHandler.get_or_create_pid(:list, key) |>
         Remixdb.List.rpush(items)
+      {:lpushx, [key|items]} ->
+        Remixdb.KeyHandler.get_pid(:list, key) |>
+        Remixdb.List.lpushx(items)
       {:lpush, [key|items]} ->
         Remixdb.KeyHandler.get_or_create_pid(:list, key) |>
         Remixdb.List.lpush(items)

@@ -182,7 +182,10 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    @tag current: true
+    @tag skip: true
+    test "LRANGE", %{client: client} do
+    end
+
     test "LPUSHX & RPUSHX", %{client: client} do
       val = client |> Exredis.query(["LPUSH", "mylist", "world"])
       assert val === "1"
@@ -190,11 +193,17 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LPUSHX", "mylist", "Hello"])
       assert val === "2"
 
+      val = client |> Exredis.query(["RPUSHX", "mylist", "There"])
+      assert val === "3"
+
       val = client |> Exredis.query(["LPUSHX", "unknown_list", "Hello"])
       assert val === "0"
 
+      val = client |> Exredis.query(["RPUSHX", "unknown_list", "Hello"])
+      assert val === "0"
+
       val = client |> Exredis.query(["LLEN", "mylist"])
-      assert val === "2"
+      assert val === "3"
 
       val = client |> Exredis.query(["LLEN", "unknown_list"])
       assert val === "0"
@@ -230,6 +239,7 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
+    @tag slow: true, skip: true
     @tag slow: true, skip: true
     test "EXPIRE", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
