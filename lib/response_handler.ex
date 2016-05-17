@@ -20,6 +20,15 @@ defmodule Remixdb.ResponseHandler do
     socket
   end
 
+  def send_response(socket, val) when is_list(val) do
+    header = "*" <> (val |> Enum.count |> Integer.to_string) <> "\r\n"
+    :gen_tcp.send socket, header
+    val |> Enum.each(fn(el) ->
+      Remixdb.ResponseHandler.send_response(socket, el)
+    end)
+    socket
+  end
+
   def send_response(socket, :ok) do
     socket |> send_ok
   end
