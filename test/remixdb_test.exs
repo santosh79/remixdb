@@ -295,7 +295,6 @@ defmodule RemixdbTest do
       assert val === ["two", "three"]
     end
 
-    @tag current: true
     test "LINDEX", %{client: client} do
       client |> Exredis.query(["LPUSH", "mylist", "World"])
       client |> Exredis.query(["LPUSH", "mylist", "Hello"])
