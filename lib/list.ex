@@ -95,8 +95,19 @@ defmodule Remixdb.List do
   end
 
   def handle_call({:lrange, start, stop}, _from, state) do
-    %{items: it} = state
-    length = it |> Enum.count
+    %{items: items} = state
+    items_in_range = get_items_in_range start, stop, items
+    {:reply, items_in_range, state}
+  end
+
+  # SantoshTODO: Mixin Termination stuff
+  def terminate(:normal, %{key_name: key_name}) do
+    Remixdb.KeyHandler.remove key_name
+    :ok
+  end
+
+  defp get_items_in_range(start, stop, items) do
+    length = items |> Enum.count
     take_amt = (case (stop >= 0) do
       true -> stop
       _    -> (length - :erlang.abs(stop))
@@ -108,14 +119,7 @@ defmodule Remixdb.List do
         _    -> (length - :erlang.abs(start))
       end
     end
-    items = it |> Enum.take(take_amt) |> Enum.drop(drop_amt)
-    {:reply, items, state}
-  end
-
-  # SantoshTODO: Mixin Termination stuff
-  def terminate(:normal, %{key_name: key_name}) do
-    Remixdb.KeyHandler.remove key_name
-    :ok
+    items |> Enum.take(take_amt) |> Enum.drop(drop_amt)
   end
 
   defp add_items_to_list(push_direction, new_items, state) do
