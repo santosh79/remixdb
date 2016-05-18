@@ -33,6 +33,7 @@ defmodule Remixdb.Parser do
           "LPOP"     -> {:lpop, args}
           "RPOP"     -> {:rpop, args}
           "LLEN"     -> {:llen, args}
+          "LRANGE"   -> {:lrange, args}
           cmd ->
             IO.puts "Parser: unknown command: "
             IO.inspect cmd

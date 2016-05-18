@@ -93,6 +93,8 @@ defmodule Remixdb.Client do
         Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.rpop
       {:llen, [key]} ->
         Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.llen
+      {:lrange, [key, start, stop]} ->
+        Remixdb.KeyHandler.get_pid(:list, key) |> Remixdb.List.lrange(start, stop)
     end
   end
 end

@@ -41,6 +41,12 @@ defmodule Remixdb.List do
     GenServer.call(name, :llen)
   end
 
+  def lrange(nil, start, stop) do; []; end
+  def lrange(name, start, stop) do
+    to_i = &String.to_integer/1
+    GenServer.call(name, {:lrange, to_i.(start), to_i.(stop)})
+  end
+
   def popped_out(name) do
     spawn(fn ->
       GenServer.stop(name, :normal)
@@ -75,6 +81,26 @@ defmodule Remixdb.List do
 
   def handle_call(:rpop, _from, state) do
     pop_items_from_list :right, state
+  end
+
+  def handle_call({:lrange, start, stop}, _from, state) do
+    %{items: it} = state
+    length = it |> Enum.count
+    {drop_amt, take_amt} = case (stop < start) do
+      true -> {0, 0}
+      _ ->
+        new_start = case (start < 0) do
+          true -> (length - :erlang.abs(start))
+          _    -> start
+        end
+        new_stop = (case (stop < 0) do
+          true -> (length - :erlang.abs(stop))
+          _    -> stop
+        end) + 1
+        {new_start, new_stop}
+    end
+    items = it |> Enum.drop(:erlang.max(0, drop_amt)) |> Enum.take(take_amt)
+    {:reply, items, state}
   end
 
   # SantoshTODO: Mixin Termination stuff
