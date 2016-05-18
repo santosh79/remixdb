@@ -3,7 +3,7 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all context do
-      Remixdb.Server.start
+      # Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
     end
@@ -161,6 +161,9 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
+    ##
+    # LISTS
+    ##
     test "RPOP & LPUSH", %{client: client} do
       val = client |> Exredis.query(["RPUSH", "mylist", "three", "four", "five", "six"])
       assert val === "4"
@@ -323,6 +326,30 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["LSET", "mylist", 200, "seven"])
       assert val === "ERR index out of range"
+    end
+
+    ##
+    # SETS
+    ##
+    @tag current: true
+    test "SADD, SCARD & SMEMBERS", %{client: client} do
+      val = client |> Exredis.query(["SADD", "myset", "Hello"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SADD", "myset", "World"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SADD", "myset", "World"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["SMEMBERS", "myset"])
+      assert (val |> Enum.sort) === (["Hello", "World"] |> Enum.sort)
+
+      val = client |> Exredis.query(["SCARD", "myset"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["SCARD", "unknown_set"])
+      assert val === "0"
     end
 
     @tag slow: true, skip: true
