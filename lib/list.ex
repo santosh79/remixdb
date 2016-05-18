@@ -86,20 +86,18 @@ defmodule Remixdb.List do
   def handle_call({:lrange, start, stop}, _from, state) do
     %{items: it} = state
     length = it |> Enum.count
-    {drop_amt, take_amt} = case (stop < start) do
-      true -> {0, 0}
-      _ ->
-        new_start = case (start < 0) do
-          true -> (length - :erlang.abs(start))
-          _    -> start
-        end
-        new_stop = (case (stop < 0) do
-          true -> (length - :erlang.abs(stop))
-          _    -> stop
-        end) + 1
-        {new_start, new_stop}
+    take_amt = (case (stop >= 0) do
+      true -> stop
+      _    -> (length - :erlang.abs(stop))
+    end) + 1
+    drop_amt = case (start >= 0) do
+      true -> start
+      _    -> case (:erlang.abs(start) > length) do
+        true -> 0
+        _    -> (length - :erlang.abs(start))
+      end
     end
-    items = it |> Enum.drop(:erlang.max(0, drop_amt)) |> Enum.take(take_amt)
+    items = it |> Enum.take(take_amt) |> Enum.drop(drop_amt)
     {:reply, items, state}
   end
 

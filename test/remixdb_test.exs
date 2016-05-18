@@ -187,6 +187,9 @@ defmodule RemixdbTest do
       client |> Exredis.query(["RPUSH", "mylist", "two"])
       client |> Exredis.query(["RPUSH", "mylist", "three"])
 
+      val = client |> Exredis.query(["LRANGE", "mylist", 0, -1])
+      assert val === ["one", "two", "three"]
+
       val = client |> Exredis.query(["LRANGE", "mylist", 0, 0])
       assert val === ["one"]
 
