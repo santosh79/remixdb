@@ -106,7 +106,7 @@ defmodule RemixdbTest do
     end
 
     test "append - existing key", %{client: client} do
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["APPEND", "mykey", " world"])
       assert val === "11"
 
@@ -134,7 +134,7 @@ defmodule RemixdbTest do
     end
 
     test "RENAME", %{client: client} do
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["RENAME", "mykey", "foo"])
       assert val === "OK"
 
@@ -149,11 +149,11 @@ defmodule RemixdbTest do
     end
 
     test "RENAMENX", %{client: client} do
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["RENAMENX", "mykey", "foo"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["RENAMENX", "foo", "mykey"])
       assert val === "0"
 
@@ -165,7 +165,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["RPUSH", "mylist", "three", "four", "five", "six"])
       assert val === "4"
 
-      val = client |> Exredis.query(["LPUSH", "mylist", "two"])
+      client |> Exredis.query(["LPUSH", "mylist", "two"])
       val = client |> Exredis.query(["LPUSH", "mylist", "one"])
       assert val === "6"
 
