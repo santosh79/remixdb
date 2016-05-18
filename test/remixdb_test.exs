@@ -3,7 +3,7 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all context do
-      Remixdb.Server.start
+      # Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
     end
@@ -307,6 +307,23 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["LINDEX", "mylist", 2])
       assert val === :undefined
+    end
+
+    @tag current: true
+    test "LSET", %{client: client} do
+      ["one", "two", "three"] |> Enum.each(fn(el) ->
+        client |> Exredis.query(["RPUSH", "mylist", el])
+      end)
+
+      client |> Exredis.query(["LSET", "mylist", 0, "four"])
+      val = client |> Exredis.query(["LSET", "mylist", -2, "five"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["LRANGE", "mylist", 0, -1])
+      assert val === ["four", "five", "three"]
+
+      val = client |> Exredis.query(["LSET", "mylist", 200, "seven"])
+      assert val === "ERR index out of range"
     end
 
     @tag slow: true, skip: true
