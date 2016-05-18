@@ -63,6 +63,10 @@ defmodule Remixdb.List do
     GenServer.call(name, {:lindex, String.to_integer(idx)})
   end
 
+  def lset(name, idx, val) do
+    GenServer.call(name, {:lset, String.to_integer(idx), val})
+  end
+
   def popped_out(name) do
     spawn(fn ->
       GenServer.stop(name, :normal)
@@ -113,15 +117,29 @@ defmodule Remixdb.List do
 
   def handle_call({:ltrim, start, stop}, _from, state) do
     %{items: items} = state
-    items_in_range = get_items_in_range start, stop, items
-    new_state = Dict.merge(state, %{items: items_in_range})
+    items_in_range  = get_items_in_range start, stop, items
+    new_state       = Dict.merge(state, %{items: items_in_range})
     {:reply, :ok, new_state}
   end
 
   def handle_call({:lindex, idx}, _from, state) do
     %{items: items} = state
-    item = get_items_in_range(idx, -1, items) |> List.first
+    item            = get_items_in_range(idx, -1, items) |> List.first
     {:reply, item, state}
+  end
+
+  def handle_call({:lset, idx, val}, _from, state) do
+    %{items: items} = state
+    length          = items |> Enum.count
+    invalid_idx     = idx >= length
+    case invalid_idx do
+      true ->
+        {:reply, {:error, "ERR index out of range"}, state}
+      _ ->
+        new_items       = items |> List.update_at(idx, fn(_x) -> val end)
+        new_state       = Dict.merge(state, %{items: new_items})
+        {:reply, :ok, new_state}
+    end
   end
 
   # SantoshTODO: Mixin Termination stuff

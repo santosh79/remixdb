@@ -3,7 +3,7 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all context do
-      # Remixdb.Server.start
+      Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
     end
@@ -309,7 +309,6 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    @tag current: true
     test "LSET", %{client: client} do
       ["one", "two", "three"] |> Enum.each(fn(el) ->
         client |> Exredis.query(["RPUSH", "mylist", el])

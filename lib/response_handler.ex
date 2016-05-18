@@ -7,6 +7,12 @@ defmodule Remixdb.ResponseHandler do
     socket |> send_nil
   end
 
+  def send_response(socket, {:error, val}) when is_bitstring(val) do
+    msg = "-" <> val <> "\r\n"
+    :gen_tcp.send socket, msg
+    socket
+  end
+
   def send_response(socket, val) when is_bitstring(val) do
     val_bytes = val |> String.length |> Integer.to_string
     msg = "$" <> val_bytes <> "\r\n" <> val <> "\r\n"
