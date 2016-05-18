@@ -52,6 +52,12 @@ defmodule Remixdb.List do
     GenServer.call(name, {:lrange, to_i.(start), to_i.(stop)})
   end
 
+  def ltrim(nil, start, stop) do; []; end
+  def ltrim(name, start, stop) do
+    to_i = &String.to_integer/1
+    GenServer.call(name, {:ltrim, to_i.(start), to_i.(stop)})
+  end
+
   def popped_out(name) do
     spawn(fn ->
       GenServer.stop(name, :normal)
@@ -98,6 +104,13 @@ defmodule Remixdb.List do
     %{items: items} = state
     items_in_range = get_items_in_range start, stop, items
     {:reply, items_in_range, state}
+  end
+
+  def handle_call({:ltrim, start, stop}, _from, state) do
+    %{items: items} = state
+    items_in_range = get_items_in_range start, stop, items
+    new_state = Dict.merge(state, %{items: items_in_range})
+    {:reply, :ok, new_state}
   end
 
   # SantoshTODO: Mixin Termination stuff

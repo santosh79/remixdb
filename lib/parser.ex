@@ -34,6 +34,7 @@ defmodule Remixdb.Parser do
           "RPOP"      -> {:rpop, args}
           "LLEN"      -> {:llen, args}
           "LRANGE"    -> {:lrange, args}
+          "LTRIM"     -> {:ltrim, args}
           "RPOPLPUSH" -> {:rpoplpush, args}
           cmd ->
             IO.puts "Parser: unknown command: "
