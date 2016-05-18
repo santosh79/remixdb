@@ -262,16 +262,22 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    @tag slow: true, skip: true
     test "RPOPLPUSH", %{client: client} do
       ["one", "two", "three"] |> Enum.each(fn(el) ->
         client |> Exredis.query(["RPUSH", "mylist", el])
       end)
+
       val = client |> Exredis.query(["RPOPLPUSH", "mylist", "myotherlist"])
       assert val === "three"
 
       val = client |> Exredis.query(["LRANGE", "mylist", 0, -1])
       assert val === ["one", "two"]
+
+      val = client |> Exredis.query(["LRANGE", "myotherlist", 0, -1])
+      assert val === ["three"]
+
+      val = client |> Exredis.query(["RPOPLPUSH", "unknown_list", "myotherlist"])
+      assert val === :undefined
 
       val = client |> Exredis.query(["LRANGE", "myotherlist", 0, -1])
       assert val === ["three"]

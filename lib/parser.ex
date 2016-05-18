@@ -10,30 +10,31 @@ defmodule Remixdb.Parser do
         IO.puts "parser bad request #{inspect reason}"
       {:ok, [cmd|args]} ->
         response = case (cmd |> String.upcase) do
-          "SET"      -> {:set, args}
-          "APPEND"   -> {:append, args}
-          "GET"      -> {:get, args}
-          "GETSET"   -> {:getset, args}
-          "EXISTS"   -> {:exists, args}
-          "DBSIZE"   -> :dbsize
-          "FLUSHALL" -> :flushall
-          "PING"     -> {:ping, args}
-          "INCR"     -> {:incr, args}
-          "DECR"     -> {:decr, args}
-          "DECRBY"   -> {:decrby, args}
-          "INCRBY"   -> {:incrby, args}
-          "SETEX"    -> {:setex, args}
-          "TTL"      -> {:ttl, args}
-          "RENAME"   -> {:rename, args}
-          "RENAMENX" -> {:renamenx, args}
-          "RPUSH"    -> {:rpush, args}
-          "RPUSHX"   -> {:rpushx, args}
-          "LPUSH"    -> {:lpush, args}
-          "LPUSHX"   -> {:lpushx, args}
-          "LPOP"     -> {:lpop, args}
-          "RPOP"     -> {:rpop, args}
-          "LLEN"     -> {:llen, args}
-          "LRANGE"   -> {:lrange, args}
+          "SET"       -> {:set, args}
+          "APPEND"    -> {:append, args}
+          "GET"       -> {:get, args}
+          "GETSET"    -> {:getset, args}
+          "EXISTS"    -> {:exists, args}
+          "DBSIZE"    -> :dbsize
+          "FLUSHALL"  -> :flushall
+          "PING"      -> {:ping, args}
+          "INCR"      -> {:incr, args}
+          "DECR"      -> {:decr, args}
+          "DECRBY"    -> {:decrby, args}
+          "INCRBY"    -> {:incrby, args}
+          "SETEX"     -> {:setex, args}
+          "TTL"       -> {:ttl, args}
+          "RENAME"    -> {:rename, args}
+          "RENAMENX"  -> {:renamenx, args}
+          "RPUSH"     -> {:rpush, args}
+          "RPUSHX"    -> {:rpushx, args}
+          "LPUSH"     -> {:lpush, args}
+          "LPUSHX"    -> {:lpushx, args}
+          "LPOP"      -> {:lpop, args}
+          "RPOP"      -> {:rpop, args}
+          "LLEN"      -> {:llen, args}
+          "LRANGE"    -> {:lrange, args}
+          "RPOPLPUSH" -> {:rpoplpush, args}
           cmd ->
             IO.puts "Parser: unknown command: "
             IO.inspect cmd

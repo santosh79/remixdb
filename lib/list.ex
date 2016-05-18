@@ -36,6 +36,11 @@ defmodule Remixdb.List do
     GenServer.call(name, :rpop)
   end
 
+  def rpoplpush(nil, _) do; :undefined; end
+  def rpoplpush(src, dest) do
+    GenServer.call(dest, {:rpoplpush, src})
+  end
+
   def llen(nil) do; 0; end
   def llen(name) do
     GenServer.call(name, :llen)
@@ -81,6 +86,12 @@ defmodule Remixdb.List do
 
   def handle_call(:rpop, _from, state) do
     pop_items_from_list :right, state
+  end
+
+  def handle_call({:rpoplpush, src}, _from, state) do
+    item = Remixdb.List.rpop src
+    {_, _, updated_state} = add_items_to_list :left, [item], state
+    {:reply, item, updated_state}
   end
 
   def handle_call({:lrange, start, stop}, _from, state) do
