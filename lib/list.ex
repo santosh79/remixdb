@@ -12,7 +12,7 @@ defmodule Remixdb.List do
     GenServer.call(name, {:rpush, items})
   end
 
-  def rpushx(nil, items) do; 0; end
+  def rpushx(nil, _items) do; 0; end
   def rpushx(name, items) do
     GenServer.call(name, {:rpushx, items})
   end
@@ -21,7 +21,7 @@ defmodule Remixdb.List do
     GenServer.call(name, {:lpush, items})
   end
 
-  def lpushx(nil, items) do; 0; end
+  def lpushx(nil, _items) do; 0; end
   def lpushx(name, items) do
     GenServer.call(name, {:lpushx, items})
   end
@@ -46,19 +46,19 @@ defmodule Remixdb.List do
     GenServer.call(name, :llen)
   end
 
-  def lrange(nil, start, stop) do; []; end
+  def lrange(nil, _start, _stop) do; []; end
   def lrange(name, start, stop) do
     to_i = &String.to_integer/1
     GenServer.call(name, {:lrange, to_i.(start), to_i.(stop)})
   end
 
-  def ltrim(nil, start, stop) do; []; end
+  def ltrim(nil, _start, _stop) do; []; end
   def ltrim(name, start, stop) do
     to_i = &String.to_integer/1
     GenServer.call(name, {:ltrim, to_i.(start), to_i.(stop)})
   end
 
-  def lindex(nil, idx) do; :undefined; end
+  def lindex(nil, _idx) do; :undefined; end
   def lindex(name, idx) do
     GenServer.call(name, {:lindex, String.to_integer(idx)})
   end
@@ -73,8 +73,7 @@ defmodule Remixdb.List do
     end)
   end
 
-  def handle_call(:llen, _from, state) do
-    %{items: items} = state
+  def handle_call(:llen, _from, %{items: items} = state) do
     list_sz = items |> Enum.count
     {:reply, list_sz, state}
   end
@@ -103,35 +102,31 @@ defmodule Remixdb.List do
     pop_items_from_list :right, state
   end
 
-  def handle_call({:rpoplpush, src}, _from, state) do
+  def handle_call({:rpoplpush, src}, _from, %{items: _items} = state) do
     item = Remixdb.List.rpop src
     {_, _, updated_state} = add_items_to_list :left, [item], state
     {:reply, item, updated_state}
   end
 
-  def handle_call({:lrange, start, stop}, _from, state) do
-    %{items: items} = state
+  def handle_call({:lrange, start, stop}, _from, %{items: items} = state) do
     items_in_range = get_items_in_range start, stop, items
     {:reply, items_in_range, state}
   end
 
-  def handle_call({:ltrim, start, stop}, _from, state) do
-    %{items: items} = state
-    items_in_range  = get_items_in_range start, stop, items
-    new_state       = Dict.merge(state, %{items: items_in_range})
+  def handle_call({:ltrim, start, stop}, _from, %{items: items} = state) do
+    items_in_range = get_items_in_range start, stop, items
+    new_state      = Dict.merge(state, %{items: items_in_range})
     {:reply, :ok, new_state}
   end
 
-  def handle_call({:lindex, idx}, _from, state) do
-    %{items: items} = state
-    item            = get_items_in_range(idx, -1, items) |> List.first
+  def handle_call({:lindex, idx}, _from, %{items: items} = state) do
+    item = get_items_in_range(idx, -1, items) |> List.first
     {:reply, item, state}
   end
 
-  def handle_call({:lset, idx, val}, _from, state) do
-    %{items: items} = state
-    length          = items |> Enum.count
-    invalid_idx     = idx >= length
+  def handle_call({:lset, idx, val}, _from, %{items: items} = state) do
+    length      = items |> Enum.count
+    invalid_idx = idx >= length
     case invalid_idx do
       true ->
         {:reply, {:error, "ERR index out of range"}, state}
