@@ -17,6 +17,11 @@ defmodule Remixdb.Set do
     GenServer.call name, :smembers
   end
 
+  def sismember(nil, _val) do; 0; end
+  def sismember(name, val) do
+    GenServer.call name, {:sismember, val}
+  end
+
   def scard(nil) do; 0; end
   def scard(name) do
     GenServer.call name, :scard
@@ -39,6 +44,14 @@ defmodule Remixdb.Set do
   def handle_call(:scard, _from, %{items: items} = state) do
     num_items = items |> Enum.count
     {:reply, num_items, state}
+  end
+
+  def handle_call({:sismember, val}, _from, %{items: items} = state) do
+    present = case MapSet.member?(items, val) do
+      true  -> 1
+      false -> 0
+    end
+    {:reply, present, state}
   end
 
   defp update_state(state, updated_items) do

@@ -331,7 +331,7 @@ defmodule RemixdbTest do
     ##
     # SETS
     ##
-    test "SADD, SCARD & SMEMBERS", %{client: client} do
+    test "SADD, SCARD, SISMEMBER & SMEMBERS", %{client: client} do
       val = client |> Exredis.query(["SADD", "myset", "Hello"])
       assert val === "1"
 
@@ -344,6 +344,12 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SMEMBERS", "myset"])
       assert (val |> Enum.sort) === (["Hello", "World"] |> Enum.sort)
 
+      val = client |> Exredis.query(["SISMEMBER", "myset", "World"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SISMEMBER", "myset", "something"])
+      assert val === "0"
+
       val = client |> Exredis.query(["SMEMBERS", "unknown_set"])
       assert val === []
 
@@ -351,6 +357,9 @@ defmodule RemixdbTest do
       assert val === "2"
 
       val = client |> Exredis.query(["SCARD", "unknown_set"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["SISMEMBER", "unknown_set", "something"])
       assert val === "0"
     end
 

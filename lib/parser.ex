@@ -40,6 +40,7 @@ defmodule Remixdb.Parser do
           "RPOPLPUSH" -> {:rpoplpush, args}
           "SADD"      -> {:sadd, args}
           "SMEMBERS"  -> {:smembers, args}
+          "SISMEMBER" -> {:sismember, args}
           "SCARD"     -> {:scard, args}
           cmd ->
             IO.puts "Parser: unknown command: "

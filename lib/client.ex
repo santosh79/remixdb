@@ -107,10 +107,13 @@ defmodule Remixdb.Client do
         Remixdb.List.rpoplpush src_pid, dest_pid
       {:sadd, [key, val]} ->
         Remixdb.KeyHandler.get_or_create_pid(:set, key) |>
-        Remixdb.Set.sadd val
+        Remixdb.Set.sadd(val)
       {:smembers, [key]} ->
         Remixdb.KeyHandler.get_pid(:set, key) |>
         Remixdb.Set.smembers
+      {:sismember, [key, val]} ->
+        Remixdb.KeyHandler.get_pid(:set, key) |>
+        Remixdb.Set.sismember(val)
       {:scard, [key]} ->
         Remixdb.KeyHandler.get_pid(:set, key) |>
         Remixdb.Set.scard
