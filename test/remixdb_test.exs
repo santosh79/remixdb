@@ -363,6 +363,22 @@ defmodule RemixdbTest do
       assert val === "0"
     end
 
+    @tag current: true
+    test "SUNION", %{client: client} do
+      ["a", "b", "c", "d"] |> Enum.each(fn(el) ->
+        client |> Exredis.query(["SADD", "key1", el])
+      end)
+
+      client |> Exredis.query(["SADD", "key2", "c"])
+
+      client |> Exredis.query(["SADD", "key3", "a"])
+      client |> Exredis.query(["SADD", "key3", "c"])
+      client |> Exredis.query(["SADD", "key3", "e"])
+
+      val = client |> Exredis.query(["SUNION", "key1", "key2", "key3", "unknown_key"])
+      assert (val |> Enum.sort) === (["a", "b", "c", "d", "e"] |> Enum.sort)
+    end
+
     @tag slow: true, skip: true
     test "EXPIRE", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
