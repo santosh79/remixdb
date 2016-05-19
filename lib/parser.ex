@@ -38,6 +38,9 @@ defmodule Remixdb.Parser do
           "LSET"      -> {:lset, args}
           "LINDEX"    -> {:lindex, args}
           "RPOPLPUSH" -> {:rpoplpush, args}
+          "SADD"      -> {:sadd, args}
+          "SMEMBERS"  -> {:smembers, args}
+          "SCARD"     -> {:scard, args}
           cmd ->
             IO.puts "Parser: unknown command: "
             IO.inspect cmd

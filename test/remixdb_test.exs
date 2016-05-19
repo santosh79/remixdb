@@ -3,7 +3,7 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all context do
-      # Remixdb.Server.start
+      Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
     end
@@ -331,7 +331,6 @@ defmodule RemixdbTest do
     ##
     # SETS
     ##
-    @tag current: true
     test "SADD, SCARD & SMEMBERS", %{client: client} do
       val = client |> Exredis.query(["SADD", "myset", "Hello"])
       assert val === "1"
@@ -344,6 +343,9 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["SMEMBERS", "myset"])
       assert (val |> Enum.sort) === (["Hello", "World"] |> Enum.sort)
+
+      val = client |> Exredis.query(["SMEMBERS", "unknown_set"])
+      assert val === []
 
       val = client |> Exredis.query(["SCARD", "myset"])
       assert val === "2"

@@ -18,8 +18,16 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:get_pid, :string, key}
   end
 
+  def get_pid(:set, key) do
+    GenServer.call :remixdb_key_handler, {:get_pid, :set, key}
+  end
+
   def get_pid(:list, key) do
     GenServer.call :remixdb_key_handler, {:get_pid, :list, key}
+  end
+
+  def get_or_create_pid(:set, key) do
+    GenServer.call :remixdb_key_handler, {:get_or_create_pid, :set, key}
   end
 
   def get_or_create_pid(:string, key) do
@@ -54,6 +62,9 @@ defmodule Remixdb.KeyHandler do
     do_lookup state, key
   end
   def handle_call({:get_pid, :string, key}, _from, state) do
+    do_lookup state, key
+  end
+  def handle_call({:get_pid, :set, key}, _from, state) do
     do_lookup state, key
   end
 
@@ -121,6 +132,7 @@ defmodule Remixdb.KeyHandler do
         key_type = case type_of_key do
           :string -> Remixdb.String
           :list   -> Remixdb.List
+          :set    -> Remixdb.Set
         end
         {:ok, pid} = key_type.start(key)
         pid
