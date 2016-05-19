@@ -115,7 +115,7 @@ defmodule Remixdb.List do
 
   def handle_call({:ltrim, start, stop}, _from, %{items: items} = state) do
     items_in_range = get_items_in_range start, stop, items
-    new_state      = Dict.merge(state, %{items: items_in_range})
+    new_state = update_state state, items_in_range
     {:reply, :ok, new_state}
   end
 
@@ -132,7 +132,7 @@ defmodule Remixdb.List do
         {:reply, {:error, "ERR index out of range"}, state}
       _ ->
         new_items       = items |> List.update_at(idx, fn(_x) -> val end)
-        new_state       = Dict.merge(state, %{items: new_items})
+        new_state = update_state state, new_items
         {:reply, :ok, new_state}
     end
   end
@@ -165,7 +165,7 @@ defmodule Remixdb.List do
       :left  -> (new_items ++ items)
       :right -> (items ++ new_items)
     end
-    new_state = Dict.merge(state, %{items: updated_items})
+    new_state = update_state state, updated_items
     list_sz = updated_items |> Enum.count
     {:reply, list_sz, new_state}
   end
@@ -185,7 +185,11 @@ defmodule Remixdb.List do
             {h, (t |> :lists.reverse)}
         end
     end
-    new_state = Dict.merge(state, %{items: updated_items})
+    new_state = update_state state, updated_items
     {:reply, head, new_state}
+  end
+
+  defp update_state(state, updated_items) do
+    Dict.merge(state, %{items: updated_items})
   end
 end

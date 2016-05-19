@@ -32,13 +32,17 @@ defmodule Remixdb.Set do
       true  -> {0, items}
       false -> {1, MapSet.put(items, item)}
     end
-    new_state = Dict.merge(state, %{items: updated_items})
+    new_state = update_state state, updated_items
     {:reply, num_items_added, new_state}
   end
 
   def handle_call(:scard, _from, %{items: items} = state) do
     num_items = items |> Enum.count
     {:reply, num_items, state}
+  end
+
+  defp update_state(state, updated_items) do
+    Dict.merge(state, %{items: updated_items})
   end
 end
 
