@@ -27,13 +27,21 @@ defmodule Remixdb.Set do
     GenServer.call name, :scard
   end
 
-  def sunion(names) when is_list(names) do
+  def sunion(names) do
     names
     |> Remixdb.Misc.pmap(&Remixdb.Set.smembers/1)
     |> Enum.reduce(MapSet.new, fn(el, acc) ->
       el |> Enum.into(MapSet.new) |> MapSet.union(acc)
     end)
     |> Enum.into([])
+  end
+
+  def sdiff([nil|rest]) do; []; end
+  def sdiff([first|rest]) do
+    first_elements = first |> Remixdb.Set.smembers |> MapSet.new
+    rest_elements  = rest |> Remixdb.Set.sunion |> MapSet.new
+    MapSet.difference(first_elements, rest_elements) |>
+    Enum.into([])
   end
 
   def handle_call(:smembers, _from, %{items: items} = state) do
