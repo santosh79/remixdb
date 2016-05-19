@@ -118,6 +118,10 @@ defmodule Remixdb.Client do
       {:scard, [key]} ->
         get_pid(:set, key) |>
         Remixdb.Set.scard
+      {:sunion, keys} ->
+        keys
+        |> Enum.map(&(get_pid(:set, &1)))
+        |> Remixdb.Set.sunion
     end
   end
 end

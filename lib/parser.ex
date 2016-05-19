@@ -42,9 +42,9 @@ defmodule Remixdb.Parser do
           "SMEMBERS"  -> {:smembers, args}
           "SISMEMBER" -> {:sismember, args}
           "SCARD"     -> {:scard, args}
+          "SUNION"    -> {:sunion, args}
           cmd ->
-            IO.puts "Parser: unknown command: "
-            IO.inspect cmd
+            IO.puts "Parser: unknown command: #{inspect cmd}"
             nil
         end
         send client, response

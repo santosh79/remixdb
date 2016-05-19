@@ -27,6 +27,15 @@ defmodule Remixdb.Set do
     GenServer.call name, :scard
   end
 
+  def sunion(names) when is_list(names) do
+    names
+    |> Remixdb.Misc.pmap(&Remixdb.Set.smembers/1)
+    |> Enum.reduce(MapSet.new, fn(el, acc) ->
+      el |> Enum.into(MapSet.new) |> MapSet.union(acc)
+    end)
+    |> Enum.into([])
+  end
+
   def handle_call(:smembers, _from, %{items: items} = state) do
     members = items |> Enum.into([])
     {:reply, members, state}
