@@ -379,6 +379,24 @@ defmodule RemixdbTest do
     end
 
     @tag current: true
+    test "SINTER", %{client: client} do
+      ["a", "b", "c", "d"] |> Enum.each(fn(el) ->
+        client |> Exredis.query(["SADD", "key1", el])
+      end)
+
+      client |> Exredis.query(["SADD", "key2", "c"])
+
+      client |> Exredis.query(["SADD", "key3", "a"])
+      client |> Exredis.query(["SADD", "key3", "c"])
+      client |> Exredis.query(["SADD", "key3", "e"])
+
+      val = client |> Exredis.query(["SINTER", "key1", "key2", "key3"])
+      assert val === ["c"]
+
+      val = client |> Exredis.query(["SINTER", "unknown_set", "key2", "key3"])
+      assert val === []
+    end
+
     test "SDIFF", %{client: client} do
       ["a", "b", "c", "d"] |> Enum.each(fn(el) ->
         client |> Exredis.query(["SADD", "key1", el])
