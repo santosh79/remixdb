@@ -378,7 +378,6 @@ defmodule RemixdbTest do
       assert (val |> Enum.sort) === (["a", "b", "c", "d", "e"] |> Enum.sort)
     end
 
-    @tag current: true
     test "SINTER", %{client: client} do
       ["a", "b", "c", "d"] |> Enum.each(fn(el) ->
         client |> Exredis.query(["SADD", "key1", el])

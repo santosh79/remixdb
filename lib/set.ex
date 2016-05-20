@@ -36,6 +36,20 @@ defmodule Remixdb.Set do
     |> Enum.into([])
   end
 
+  def sinter([nil|rest]) do; []; end
+  def sinter(items) do
+    first_item = items |> List.first |> Remixdb.Set.smembers |> MapSet.new
+
+    items
+    |> Enum.map(&Remixdb.Set.smembers/1)
+    |> Enum.reduce(first_item, fn(item, acc) ->
+      item
+      |> Enum.into(MapSet.new)
+      |> MapSet.intersection(acc)
+    end)
+    |> Enum.into([])
+  end
+
   def sdiff([nil|rest]) do; []; end
   def sdiff([first|rest]) do
     first_elements = first |> Remixdb.Set.smembers |> MapSet.new
