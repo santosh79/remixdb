@@ -1,10 +1,11 @@
 defmodule Remixdb.ResponseHandler do
   def send_response(socket, nil) do
-    socket |> send_nil
+    :gen_tcp.send socket, "$-1\r\n"
+    socket
   end
 
   def send_response(socket, :undefined) do
-    socket |> send_nil
+    send_response socket, nil
   end
 
   def send_response(socket, {:error, val}) when is_bitstring(val) do
@@ -44,9 +45,5 @@ defmodule Remixdb.ResponseHandler do
     socket
   end
 
-  defp send_nil(socket) do
-    :gen_tcp.send socket, "$-1\r\n"
-    socket
-  end
 end
 
