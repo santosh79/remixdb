@@ -121,6 +121,10 @@ defmodule Remixdb.Client do
       {:scard, [key]} ->
         get_pid(:set, key) |>
         Remixdb.Set.scard
+      {:smove, [src, dest, member]} ->
+        src_pid  = get_pid(:set, src)
+        dest_pid = get_or_create_pid(:set, dest)
+        Remixdb.Set.smove src_pid, dest_pid, member
       {:srandmember, [key]} ->
         get_pid(:set, key) |>
         Remixdb.Set.srandmember
