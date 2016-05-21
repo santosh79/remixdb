@@ -46,6 +46,7 @@ defmodule Remixdb.Parser do
           "SDIFF"       -> {:sdiff, args}
           "SINTER"      -> {:sinter, args}
           "SRANDMEMBER" -> {:srandmember, args}
+          "SPOP"        -> {:spop, args}
           cmd ->
             IO.puts "Parser: unknown command: #{inspect cmd}"
             nil

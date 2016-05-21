@@ -32,6 +32,11 @@ defmodule Remixdb.Set do
     GenServer.call name, :srandmember
   end
 
+  def spop(nil) do; :undefined; end
+  def spop(name) do
+    GenServer.call name, :spop
+  end
+
   def sunion(names) do
     names
     |> Remixdb.Misc.pmap(&Remixdb.Set.smembers/1)
@@ -73,7 +78,7 @@ defmodule Remixdb.Set do
       true  -> {0, items}
       false -> {1, MapSet.put(items, item)}
     end
-    new_state = update_state state, updated_items
+    new_state = update_state updated_items, state
     {:reply, num_items_added, new_state}
   end
 
@@ -83,8 +88,16 @@ defmodule Remixdb.Set do
   end
 
   def handle_call(:srandmember, _from, %{items: items} = state) do
-    rand_item = items |> Enum.shuffle |> Enum.take(1) |> List.first
+    rand_item = items |> get_rand_item 
     {:reply, rand_item, state}
+  end
+
+  def handle_call(:spop, _from, %{items: items} = state) do
+    rand_item = items |> get_rand_item
+    new_items = items |> MapSet.new |> MapSet.delete(rand_item)
+    new_state = new_items |> update_state(state)
+    Remixdb.Set.popped_out? self, (new_items |> Enum.count)
+    {:reply, rand_item, new_state}
   end
 
   def handle_call({:sismember, val}, _from, %{items: items} = state) do
@@ -95,8 +108,21 @@ defmodule Remixdb.Set do
     {:reply, present, state}
   end
 
-  defp update_state(state, updated_items) do
+  def terminate(:normal, _state) do; :ok; end
+
+  defp get_rand_item(items) do
+    items |> Enum.shuffle |> Enum.take(1) |> List.first
+  end
+
+  defp update_state(updated_items, state) do
     Dict.merge(state, %{items: updated_items})
   end
+
+  def popped_out?(name, 0) do
+    spawn(fn ->
+      GenServer.stop(name, :normal)
+    end)
+  end
+  def popped_out?(name, _) do; :void; end
 end
 
