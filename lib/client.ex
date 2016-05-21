@@ -109,6 +109,9 @@ defmodule Remixdb.Client do
       {:sadd, [key|items]} ->
         get_or_create_pid(:set, key) |>
         Remixdb.Set.sadd(items)
+      {:srem, [key|items]} ->
+        get_or_create_pid(:set, key) |>
+        Remixdb.Set.srem(items)
       {:smembers, [key]} ->
         get_pid(:set, key) |>
         Remixdb.Set.smembers

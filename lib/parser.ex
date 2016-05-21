@@ -39,6 +39,7 @@ defmodule Remixdb.Parser do
           "LINDEX"      -> {:lindex, args}
           "RPOPLPUSH"   -> {:rpoplpush, args}
           "SADD"        -> {:sadd, args}
+          "SREM"        -> {:srem, args}
           "SMEMBERS"    -> {:smembers, args}
           "SISMEMBER"   -> {:sismember, args}
           "SCARD"       -> {:scard, args}

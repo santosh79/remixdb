@@ -12,6 +12,10 @@ defmodule Remixdb.Set do
     GenServer.call name, {:sadd, MapSet.new(items)}
   end
 
+  def srem(name, items) do
+    GenServer.call name, {:srem, MapSet.new(items)}
+  end
+
   def smembers(nil) do; []; end
   def smembers(name) do
     GenServer.call name, :smembers
@@ -75,9 +79,17 @@ defmodule Remixdb.Set do
 
   def handle_call({:sadd, new_items}, _from, %{items: items} = state) do
     num_items_added = MapSet.difference(new_items, items) |> Enum.count
-    updated_items = MapSet.union(items, new_items)
-    new_state = update_state updated_items, state
+    updated_items   = MapSet.union(items, new_items)
+    new_state       = update_state updated_items, state
     {:reply, num_items_added, new_state}
+  end
+
+  def handle_call({:srem, new_items}, _from, %{items: items} = state) do
+    num_items_removed = MapSet.intersection(items, new_items) |> Enum.count
+    new_items         = MapSet.difference(items, new_items)
+    new_state         = new_items |> update_state(state)
+    Remixdb.Set.popped_out? self, (new_items |> Enum.count)
+    {:reply, num_items_removed, new_state}
   end
 
   def handle_call(:scard, _from, %{items: items} = state) do
@@ -116,6 +128,7 @@ defmodule Remixdb.Set do
     Dict.merge(state, %{items: updated_items})
   end
 
+  # SantoshTODO
   def popped_out?(name, 0) do
     spawn(fn ->
       GenServer.stop(name, :normal)
