@@ -421,6 +421,23 @@ defmodule RemixdbTest do
     end
 
     @tag current: true
+    test "SMOVE", %{client: client} do
+      full_list = ["a", "b", "c", "d"]
+      client |> Exredis.query(["SADD", "key1"] ++ full_list)
+
+      val = client |> Exredis.query(["EXISTS", "key2"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["SMOVE", "key1", "key2", "a"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["EXISTS", "key2"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SMOVE", "key1", "key2", "a"])
+      assert val === "0"
+    end
+
     test "SREM", %{client: client} do
       full_list = ["a", "b", "c", "d"]
       client |> Exredis.query(["SADD", "key1"] ++ full_list)
