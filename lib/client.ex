@@ -106,9 +106,9 @@ defmodule Remixdb.Client do
         src_pid  = get_pid(:list, src)
         dest_pid = get_or_create_pid(:list, dest)
         Remixdb.List.rpoplpush src_pid, dest_pid
-      {:sadd, [key, val]} ->
+      {:sadd, [key|items]} ->
         get_or_create_pid(:set, key) |>
-        Remixdb.Set.sadd(val)
+        Remixdb.Set.sadd(items)
       {:smembers, [key]} ->
         get_pid(:set, key) |>
         Remixdb.Set.smembers

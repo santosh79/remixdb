@@ -8,8 +8,8 @@ defmodule Remixdb.Set do
     {:ok, %{items: MapSet.new(), key_name: key_name}}
   end
 
-  def sadd(name, item) do
-    GenServer.call name, {:sadd, item}
+  def sadd(name, items) do
+    GenServer.call name, {:sadd, MapSet.new(items)}
   end
 
   def smembers(nil) do; []; end
@@ -73,11 +73,9 @@ defmodule Remixdb.Set do
     {:reply, members, state}
   end
 
-  def handle_call({:sadd, item}, _from, %{items: items} = state) do
-    {num_items_added, updated_items} = case MapSet.member?(items, item) do
-      true  -> {0, items}
-      false -> {1, MapSet.put(items, item)}
-    end
+  def handle_call({:sadd, new_items}, _from, %{items: items} = state) do
+    num_items_added = MapSet.difference(new_items, items) |> Enum.count
+    updated_items = MapSet.union(items, new_items)
     new_state = update_state updated_items, state
     {:reply, num_items_added, new_state}
   end
