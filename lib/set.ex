@@ -27,6 +27,11 @@ defmodule Remixdb.Set do
     GenServer.call name, :scard
   end
 
+  def srandmember(nil) do; :undefined; end
+  def srandmember(name) do
+    GenServer.call name, :srandmember
+  end
+
   def sunion(names) do
     names
     |> Remixdb.Misc.pmap(&Remixdb.Set.smembers/1)
@@ -75,6 +80,11 @@ defmodule Remixdb.Set do
   def handle_call(:scard, _from, %{items: items} = state) do
     num_items = items |> Enum.count
     {:reply, num_items, state}
+  end
+
+  def handle_call(:srandmember, _from, %{items: items} = state) do
+    rand_item = items |> Enum.shuffle |> Enum.take(1) |> List.first
+    {:reply, rand_item, state}
   end
 
   def handle_call({:sismember, val}, _from, %{items: items} = state) do

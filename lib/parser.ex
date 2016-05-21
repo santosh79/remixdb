@@ -10,41 +10,42 @@ defmodule Remixdb.Parser do
         IO.puts "parser bad request #{inspect reason}"
       {:ok, [cmd|args]} ->
         response = case (cmd |> String.upcase) do
-          "SET"       -> {:set, args}
-          "APPEND"    -> {:append, args}
-          "GET"       -> {:get, args}
-          "GETSET"    -> {:getset, args}
-          "EXISTS"    -> {:exists, args}
-          "DBSIZE"    -> :dbsize
-          "FLUSHALL"  -> :flushall
-          "PING"      -> {:ping, args}
-          "INCR"      -> {:incr, args}
-          "DECR"      -> {:decr, args}
-          "DECRBY"    -> {:decrby, args}
-          "INCRBY"    -> {:incrby, args}
-          "SETEX"     -> {:setex, args}
-          "TTL"       -> {:ttl, args}
-          "RENAME"    -> {:rename, args}
-          "RENAMENX"  -> {:renamenx, args}
-          "RPUSH"     -> {:rpush, args}
-          "RPUSHX"    -> {:rpushx, args}
-          "LPUSH"     -> {:lpush, args}
-          "LPUSHX"    -> {:lpushx, args}
-          "LPOP"      -> {:lpop, args}
-          "RPOP"      -> {:rpop, args}
-          "LLEN"      -> {:llen, args}
-          "LRANGE"    -> {:lrange, args}
-          "LTRIM"     -> {:ltrim, args}
-          "LSET"      -> {:lset, args}
-          "LINDEX"    -> {:lindex, args}
-          "RPOPLPUSH" -> {:rpoplpush, args}
-          "SADD"      -> {:sadd, args}
-          "SMEMBERS"  -> {:smembers, args}
-          "SISMEMBER" -> {:sismember, args}
-          "SCARD"     -> {:scard, args}
-          "SUNION"    -> {:sunion, args}
-          "SDIFF"     -> {:sdiff, args}
-          "SINTER"    -> {:sinter, args}
+          "SET"         -> {:set, args}
+          "APPEND"      -> {:append, args}
+          "GET"         -> {:get, args}
+          "GETSET"      -> {:getset, args}
+          "EXISTS"      -> {:exists, args}
+          "DBSIZE"      -> :dbsize
+          "FLUSHALL"    -> :flushall
+          "PING"        -> {:ping, args}
+          "INCR"        -> {:incr, args}
+          "DECR"        -> {:decr, args}
+          "DECRBY"      -> {:decrby, args}
+          "INCRBY"      -> {:incrby, args}
+          "SETEX"       -> {:setex, args}
+          "TTL"         -> {:ttl, args}
+          "RENAME"      -> {:rename, args}
+          "RENAMENX"    -> {:renamenx, args}
+          "RPUSH"       -> {:rpush, args}
+          "RPUSHX"      -> {:rpushx, args}
+          "LPUSH"       -> {:lpush, args}
+          "LPUSHX"      -> {:lpushx, args}
+          "LPOP"        -> {:lpop, args}
+          "RPOP"        -> {:rpop, args}
+          "LLEN"        -> {:llen, args}
+          "LRANGE"      -> {:lrange, args}
+          "LTRIM"       -> {:ltrim, args}
+          "LSET"        -> {:lset, args}
+          "LINDEX"      -> {:lindex, args}
+          "RPOPLPUSH"   -> {:rpoplpush, args}
+          "SADD"        -> {:sadd, args}
+          "SMEMBERS"    -> {:smembers, args}
+          "SISMEMBER"   -> {:sismember, args}
+          "SCARD"       -> {:scard, args}
+          "SUNION"      -> {:sunion, args}
+          "SDIFF"       -> {:sdiff, args}
+          "SINTER"      -> {:sinter, args}
+          "SRANDMEMBER" -> {:srandmember, args}
           cmd ->
             IO.puts "Parser: unknown command: #{inspect cmd}"
             nil
