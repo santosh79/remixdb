@@ -331,7 +331,6 @@ defmodule RemixdbTest do
     ##
     # SETS
     ##
-    @tag current: true
     test "SADD, SCARD, SISMEMBER & SMEMBERS", %{client: client} do
       val = client |> Exredis.query(["SADD", "myset", "Hello"])
       assert val === "1"
@@ -421,13 +420,24 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    # @tag current: true
-    # test "spop", %{client: client} do
-    #   full_set =  ["a", "b", "c", "d"] |> MapSet.new
-    #   full_set |> Enum.each(fn(el) ->
-    #     client |> Exredis.query(["SADD", "key1", el])
-    #   end)
-    # end
+    @tag current: true
+    test "SREM", %{client: client} do
+      full_list = ["a", "b", "c", "d"]
+      client |> Exredis.query(["SADD", "key1"] ++ full_list)
+
+      val = client |> Exredis.query(["SREM", "key1", "a", "d", "e"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["SREM", "unknown_set", "a", "d", "e"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
+      assert val === "2"
+      # SantoshTODO
+      # val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
+      # val = client |> Exredis.query(["EXISTS", "key1"])
+      # assert val === "0"
+    end
 
     test "spop", %{client: client} do
       full_list = ["a", "b", "c", "d"]
@@ -450,6 +460,8 @@ defmodule RemixdbTest do
       client |> Exredis.query(["SADD", "key2", "a"])
       val = client |> Exredis.query(["SPOP", "key2"])
       assert val === "a"
+
+      # SantoshTODO
       # val = client |> Exredis.query(["EXISTS", "key2"])
       # assert val === "0"
     end
