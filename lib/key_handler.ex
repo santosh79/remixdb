@@ -14,28 +14,14 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:exists, key}
   end
 
-  def get_pid(:string, key) do
-    GenServer.call :remixdb_key_handler, {:get_pid, :string, key}
+  def get_pid(key_type, key) do
+    term = get_term key_type
+    GenServer.call :remixdb_key_handler, {:get_pid, term, key}
   end
 
-  def get_pid(:set, key) do
-    GenServer.call :remixdb_key_handler, {:get_pid, :set, key}
-  end
-
-  def get_pid(:list, key) do
-    GenServer.call :remixdb_key_handler, {:get_pid, :list, key}
-  end
-
-  def get_or_create_pid(:set, key) do
-    GenServer.call :remixdb_key_handler, {:get_or_create_pid, :set, key}
-  end
-
-  def get_or_create_pid(:string, key) do
-    GenServer.call :remixdb_key_handler, {:get_or_create_pid, :string, key}
-  end
-
-  def get_or_create_pid(:list, key) do
-    GenServer.call :remixdb_key_handler, {:get_or_create_pid, :list, key}
+  def get_or_create_pid(key_type, key) do
+    term = get_term key_type
+    GenServer.call :remixdb_key_handler, {:get_or_create_pid, term, key}
   end
 
   def dbsize do
@@ -140,5 +126,8 @@ defmodule Remixdb.KeyHandler do
     end
   end
 
+  defp get_term(:string) do; :string; end
+  defp get_term(:set) do; :set; end
+  defp get_term(:list) do; :list; end
 end
 
