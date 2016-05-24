@@ -77,6 +77,17 @@ defmodule Remixdb.Set do
     Enum.into([])
   end
 
+  def sdiffstore(dest, keys) do
+    GenServer.call dest, {:sdiffstore, keys}
+  end
+
+  def handle_call({:sdiffstore, keys}, _from, %{items: items} = state) do
+    result = keys |> Remixdb.Set.sdiff |> MapSet.new
+    num_items = result |> Enum.count
+    new_state = update_state result, state
+    {:reply, num_items, new_state}
+  end
+
   def handle_call(:smembers, _from, %{items: items} = state) do
     members = items |> Enum.into([])
     {:reply, members, state}

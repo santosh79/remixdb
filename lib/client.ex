@@ -143,6 +143,10 @@ defmodule Remixdb.Client do
         keys
         |> Enum.map(&(get_pid(:set, &1)))
         |> Remixdb.Set.sinter
+      {:sdiffstore, [dest|keys]} ->
+        dest_pid = get_or_create_pid :set, dest
+        key_pids =  keys |> Enum.map(&(get_pid(:set, &1)))
+        Remixdb.Set.sdiffstore dest_pid, key_pids
     end
   end
 end
