@@ -3,7 +3,7 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all context do
-      Remixdb.Server.start
+      # Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
     end
@@ -491,7 +491,35 @@ defmodule RemixdbTest do
       # assert val === "0"
     end
 
-    @tag slow: true, skip: true
+    @tag current: true
+    test "SDIFFSTORE", %{client: client} do
+      full_list =  ["a", "b", "c", "d"] 
+      full_set = full_list |> MapSet.new
+      client |> Exredis.query(["SADD", "key1"] ++ full_list)
+
+      client |> Exredis.query(["SADD", "key2", "c"])
+
+      client |> Exredis.query(["SADD", "key3", "a", "c", "e"])
+
+      val = client |> Exredis.query(["SDIFFSTORE", "key4", "key1", "key2", "key3"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["SMEMBERS", "key4"])
+      assert (val |> Enum.sort) === (["b", "d"] |> Enum.sort)
+
+      #Overwrites an existing key
+      client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SDIFFSTORE", "mykey", "key1", "key2", "key3"])
+      val = client |> Exredis.query(["SMEMBERS", "mykey"])
+      assert (val |> Enum.sort) === (["b", "d"] |> Enum.sort)
+
+      #Deletes a key when storing an empty set
+      val = client |> Exredis.query(["SDIFFSTORE", "mykey", "key1", "key1"])
+      assert val === "0"
+      val = client |> Exredis.query(["EXISTS", "mykey"])
+      assert val === "0"
+    end
+
     test "EXPIRE", %{client: client} do
       val = client |> Exredis.query(["SET", "mykey", "hello"])
       assert val === "OK"
