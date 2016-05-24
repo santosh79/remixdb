@@ -67,12 +67,6 @@ defmodule Remixdb.List do
     GenServer.call(name, {:lset, String.to_integer(idx), val})
   end
 
-  def popped_out(name) do
-    spawn(fn ->
-      GenServer.stop(name, :normal)
-    end)
-  end
-
   def handle_call(:llen, _from, %{items: items} = state) do
     list_sz = items |> Enum.count
     {:reply, list_sz, state}
@@ -173,7 +167,6 @@ defmodule Remixdb.List do
   defp pop_items_from_list(pop_direction, state) do
     {head, updated_items} = case Dict.get(state, :items) do
       []    ->
-        Remixdb.List.popped_out self
         {:undefined, []}
       list ->
         case pop_direction do
@@ -185,6 +178,7 @@ defmodule Remixdb.List do
             {h, (t |> :lists.reverse)}
         end
     end
+    Remixdb.Keys.popped_out? updated_items, self
     new_state = update_state state, updated_items
     {:reply, head, new_state}
   end

@@ -151,12 +151,5 @@ defmodule Remixdb.Set do
     Dict.merge(state, %{items: updated_items})
   end
 
-  # SantoshTODO
-  def popped_out?(name, 0) do; :void; end
-  #   spawn(fn ->
-  #     GenServer.stop(name, :normal)
-  #   end)
-  # end
-  def popped_out?(name, _) do; :void; end
 end
 
