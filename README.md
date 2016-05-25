@@ -13,6 +13,8 @@ RemixDB is a distributed NoSQL database, that implements the [Redis](http://redi
 Finally:
 - Zero Code change required: Your code works with Redis, awesome. RemixDB speaks the Redis protocol. So you can try it without making any code change or changing your drivers. **If it works with Redis, it works with RemixDB**.
 
+## Why do this?
+Simple, scalability. What do I mean by this? The idea that you can grow your cluster in real time, without a shutdown on a rock-solid VM is extremely appealing to me. I am **not** trying to compete with Redis or Memcached in terms of performance. Instead, what I am trying to do is offer an alternative where you can scale your NoSQL DB pretty much how to the limits.
 
 ## Getting Started
 TBD
