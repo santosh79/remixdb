@@ -77,14 +77,21 @@ defmodule Remixdb.Set do
     Enum.into([])
   end
 
+  def sunionstore(dest, keys) do
+   GenServer.call dest, {:sunionstore, keys}
+  end
+
   def sdiffstore(dest, keys) do
     GenServer.call dest, {:sdiffstore, keys}
   end
 
+  def handle_call({:sunionstore, keys}, _from, state) do
+    {num_items, new_state} = perform_store_command &Remixdb.Set.sunion/1, keys, state
+    {:reply, num_items, new_state}
+  end
+
   def handle_call({:sdiffstore, keys}, _from, %{items: items} = state) do
-    result = keys |> Remixdb.Set.sdiff |> MapSet.new
-    num_items = result |> Enum.count
-    new_state = update_state result, state
+    {num_items, new_state} = perform_store_command &Remixdb.Set.sdiff/1, keys, state
     {:reply, num_items, new_state}
   end
 
@@ -149,6 +156,13 @@ defmodule Remixdb.Set do
 
   defp update_state(updated_items, state) do
     Dict.merge(state, %{items: updated_items})
+  end
+
+  defp perform_store_command(func, keys, %{items: items} = state) do
+    result = func.(keys) |> MapSet.new
+    num_items = result |> Enum.count
+    new_state = update_state result, state
+    {num_items, new_state}
   end
 
 end

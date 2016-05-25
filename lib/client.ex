@@ -1,3 +1,5 @@
+import Remixdb.KeyHandler, only: [flushall: 0, dbsize: 0, get_pid: 2, get_or_create_pid: 2, exists?: 1, rename_key: 2, renamenx_key: 2]
+
 defmodule Remixdb.Client do
   def start(socket) do
     spawn Remixdb.Client, :loop, [socket]
@@ -32,7 +34,6 @@ defmodule Remixdb.Client do
   end
 
   defp get_response() do
-    import Remixdb.KeyHandler, only: [flushall: 0, dbsize: 0, get_pid: 2, get_or_create_pid: 2, exists?: 1, rename_key: 2, renamenx_key: 2]
     receive do
       {:ping, []} -> "PONG"
       {:ping, [res]} -> res
@@ -113,41 +114,46 @@ defmodule Remixdb.Client do
         get_or_create_pid(:set, key) |>
         Remixdb.Set.srem(items)
       {:smembers, [key]} ->
-        get_pid(:set, key) |>
-        Remixdb.Set.smembers
+        perform_set_single_arg_cmd key, &Remixdb.Set.smembers/1
       {:sismember, [key, val]} ->
         get_pid(:set, key) |>
         Remixdb.Set.sismember(val)
       {:scard, [key]} ->
-        get_pid(:set, key) |>
-        Remixdb.Set.scard
+        perform_set_single_arg_cmd key, &Remixdb.Set.scard/1
       {:smove, [src, dest, member]} ->
         src_pid  = get_pid(:set, src)
         dest_pid = get_or_create_pid(:set, dest)
         Remixdb.Set.smove src_pid, dest_pid, member
       {:srandmember, [key]} ->
-        get_pid(:set, key) |>
-        Remixdb.Set.srandmember
+        perform_set_single_arg_cmd key, &Remixdb.Set.srandmember/1
       {:spop, [key]} ->
-        get_pid(:set, key) |>
-        Remixdb.Set.spop
+        perform_set_single_arg_cmd key, &Remixdb.Set.spop/1
       {:sunion, keys} ->
-        keys
-        |> Enum.map(&(get_pid(:set, &1)))
-        |> Remixdb.Set.sunion
+        perform_set_multi_args_cmd keys, &Remixdb.Set.sunion/1
       {:sdiff, keys} ->
-        keys
-        |> Enum.map(&(get_pid(:set, &1)))
-        |> Remixdb.Set.sdiff
+        perform_set_multi_args_cmd keys, &Remixdb.Set.sdiff/1
       {:sinter, keys} ->
-        keys
-        |> Enum.map(&(get_pid(:set, &1)))
-        |> Remixdb.Set.sinter
-      {:sdiffstore, [dest|keys]} ->
-        dest_pid = get_or_create_pid :set, dest
-        key_pids =  keys |> Enum.map(&(get_pid(:set, &1)))
-        Remixdb.Set.sdiffstore dest_pid, key_pids
+        perform_set_multi_args_cmd keys, &Remixdb.Set.sinter/1
+      {:sdiffstore, args} ->
+        perform_store_command &Remixdb.Set.sdiffstore/2, args
+      {:sunionstore, args} ->
+        perform_store_command &Remixdb.Set.sunionstore/2, args
     end
+  end
+
+
+  defp perform_set_single_arg_cmd(key, func) do
+    func.(get_pid(:set, key))
+  end
+
+  defp perform_set_multi_args_cmd(keys, func) do
+    func.(keys |> Enum.map(&(get_pid(:set, &1))))
+  end
+
+  defp perform_store_command(func, [dest|keys]) do
+    dest_pid = get_or_create_pid :set, dest
+    key_pids =  keys |> Enum.map(&(get_pid(:set, &1)))
+    func.(dest_pid, key_pids)
   end
 end
 
