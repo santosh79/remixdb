@@ -493,6 +493,35 @@ defmodule RemixdbTest do
     end
 
     @tag current: true
+    test "SINTERSTORE", %{client: client} do
+      full_list =  ["a", "b", "c", "d"] 
+      full_set = full_list |> MapSet.new
+      client |> Exredis.query(["SADD", "key1"] ++ full_list)
+
+      client |> Exredis.query(["SADD", "key2", "c"])
+
+      client |> Exredis.query(["SADD", "key3", "a", "c", "e"])
+
+      val = client |> Exredis.query(["SINTERSTORE", "key4", "key1", "key2", "key3"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SMEMBERS", "key4"])
+      assert val === ["c"]
+
+      # SantoshTODO
+      #Overwrites an existing key
+      client |> Exredis.query(["SET", "mykey", "hello"])
+      client |> Exredis.query(["SINTERSTORE", "mykey", "key1", "key2", "key3"])
+      val = client |> Exredis.query(["SMEMBERS", "mykey"])
+      assert val === ["c"]
+
+      # Deletes a key when storing an empty set
+      val = client |> Exredis.query(["SINTERSTORE", "mykey", "unknown_set", "unknown_set"])
+      assert val === "0"
+      val = client |> Exredis.query(["EXISTS", "mykey"])
+      assert val === "0"
+    end
+
     test "SUNIONSTORE", %{client: client} do
       full_list =  ["a", "b", "c", "d"] 
       full_set = full_list |> MapSet.new
