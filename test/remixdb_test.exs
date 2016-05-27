@@ -492,7 +492,6 @@ defmodule RemixdbTest do
       # assert val === "0"
     end
 
-    @tag current: true
     test "SINTERSTORE", %{client: client} do
       full_list =  ["a", "b", "c", "d"] 
       full_set = full_list |> MapSet.new
@@ -578,6 +577,51 @@ defmodule RemixdbTest do
       # assert val === "0"
       # val = client |> Exredis.query(["EXISTS", "mykey"])
       # assert val === "0"
+    end
+
+    @tag current: true
+    test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL", %{client: client} do
+      val = client |> Exredis.query(["HSET", "myhash", "name", "john"])
+      assert val === "1"
+      val = client |> Exredis.query(["HSET", "myhash", "name", "john"])
+      assert val === "0"
+      client |> Exredis.query(["HSET", "myhash", "age", "30"])
+
+      val = client |> Exredis.query(["HLEN", "myhash"])
+      assert val === "2"
+
+      val = client |> Exredis.query(["HGET", "myhash", "name"])
+      assert val === "john"
+      val = client |> Exredis.query(["HGET", "myhash", "unknown_field"])
+      assert val === :undefined
+
+      val = client |> Exredis.query(["HKEYS", "myhash"])
+      assert (val |> Enum.sort) === (["name", "age"] |> Enum.sort)
+
+      val = client |> Exredis.query(["HEXISTS", "myhash", "name"])
+      assert val === "1"
+      val = client |> Exredis.query(["HEXISTS", "myhash", "unknown_field"])
+      assert val === "0"
+      val = client |> Exredis.query(["HEXISTS", "unknown_hash", "unknown_field"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["HKEYS", "unknown_hash"])
+      assert val === []
+
+      val = client |> Exredis.query(["HVALS", "myhash"])
+      assert (val |> Enum.sort) === (["john", "30"] |> Enum.sort)
+      val = client |> Exredis.query(["HVALS", "unknown_hash"])
+      assert val === []
+
+      client |> Exredis.query(["HSET", "myhash", "city", "SF"])
+      val = client |> Exredis.query(["HDEL", "myhash", "city", "unknown_field", "name"])
+      assert val === "2"
+
+      # SantoshTODO
+      val = client |> Exredis.query(["HDEL", "myhash", "city", "unknown_field", "name", "age"])
+      assert val === "1"
+      val = client |> Exredis.query(["EXISTS", "myhash"])
+      assert val === "0"
     end
 
     @tag slow: true, skip: true
