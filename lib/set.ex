@@ -85,6 +85,10 @@ defmodule Remixdb.Set do
     GenServer.call dest, {:sdiffstore, keys}
   end
 
+  def sinterstore(dest, keys) do
+    GenServer.call dest, {:sinterstore, keys}
+  end
+
   def handle_call({:sunionstore, keys}, _from, state) do
     {num_items, new_state} = perform_store_command &Remixdb.Set.sunion/1, keys, state
     {:reply, num_items, new_state}
@@ -92,6 +96,11 @@ defmodule Remixdb.Set do
 
   def handle_call({:sdiffstore, keys}, _from, %{items: items} = state) do
     {num_items, new_state} = perform_store_command &Remixdb.Set.sdiff/1, keys, state
+    {:reply, num_items, new_state}
+  end
+
+  def handle_call({:sinterstore, keys}, _from, state) do
+    {num_items, new_state} = perform_store_command &Remixdb.Set.sinter/1, keys, state
     {:reply, num_items, new_state}
   end
 

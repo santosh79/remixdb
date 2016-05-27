@@ -138,6 +138,8 @@ defmodule Remixdb.Client do
         perform_store_command &Remixdb.Set.sdiffstore/2, args
       {:sunionstore, args} ->
         perform_store_command &Remixdb.Set.sunionstore/2, args
+      {:sinterstore, args} ->
+        perform_store_command &Remixdb.Set.sinterstore/2, args
     end
   end
 
