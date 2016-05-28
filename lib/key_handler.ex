@@ -44,18 +44,19 @@ defmodule Remixdb.KeyHandler do
     GenServer.call :remixdb_key_handler, {:renamenx_key, old_name, new_name}
   end
 
-  # SantoshTODO: Fix Bug
-  # We should index by key_type
-  def handle_call({:get_pid, :list, key}, _from, state) do
-    do_lookup state, key
+  defp valid_keytype?(key_type) do
+    case key_type do
+      :list   -> true
+      :string -> true
+      :set    -> true
+      :hash   -> true
+    end
   end
-  def handle_call({:get_pid, :string, key}, _from, state) do
-    do_lookup state, key
-  end
-  def handle_call({:get_pid, :set, key}, _from, state) do
-    do_lookup state, key
-  end
-  def handle_call({:get_pid, :hash, key}, _from, state) do
+
+  def handle_call({:get_pid, key_type, key}, _from, state) do
+    case valid_keytype?(key_type) do
+      true -> do_lookup(state, key)
+    end
     do_lookup state, key
   end
 
