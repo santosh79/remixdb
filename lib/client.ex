@@ -140,21 +140,35 @@ defmodule Remixdb.Client do
         perform_store_command &Remixdb.Set.sunionstore/2, args
       {:sinterstore, args} ->
         perform_store_command &Remixdb.Set.sinterstore/2, args
+      {:hincrby, [key, field, val]} ->
+        get_or_create_pid(:hash, key) |>
+        Remixdb.Hash.hincrby field, val
       {:hset, [key, field, val]} ->
-        key_pid = get_or_create_pid :hash, key
-        key_pid |> Remixdb.Hash.hset %{field => val}
+        get_or_create_pid(:hash, key) |>
+        Remixdb.Hash.hset %{field => val}
+      {:hsetnx, [key, field, val]} ->
+        get_or_create_pid(:hash, key) |>
+        Remixdb.Hash.hsetnx field, val
       {:hlen, [key]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hlen
       {:hdel, [key|fields]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hdel(fields)
+      {:hmget, [key|fields]} ->
+        get_or_create_pid(:hash, key) |> Remixdb.Hash.hmget(fields)
+      {:hmset, [key|fields]} ->
+        get_or_create_pid(:hash, key) |> Remixdb.Hash.hmset(fields)
       {:hget, [key, field]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hget(field)
+      {:hgetall, [key]} ->
+        get_pid(:hash, key) |> Remixdb.Hash.hgetall
       {:hkeys, [key]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hkeys
       {:hvals, [key]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hvals
       {:hexists, [key, field]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hexists(field)
+      {:hstrlen, [key, field]} ->
+        get_pid(:hash, key) |> Remixdb.Hash.hstrlen(field)
     end
   end
 

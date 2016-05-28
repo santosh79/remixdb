@@ -53,12 +53,18 @@ defmodule Remixdb.Parser do
           "SUNIONSTORE" -> {:sunionstore, args}
           "SINTERSTORE" -> {:sinterstore, args}
           "HSET"        -> {:hset, args}
+          "HMSET"       -> {:hmset, args}
+          "HSETNX"      -> {:hsetnx, args}
+          "HMGET"       -> {:hmget, args}
           "HLEN"        -> {:hlen, args}
           "HGET"        -> {:hget, args}
+          "HGETALL"     -> {:hgetall, args}
           "HDEL"        -> {:hdel, args}
           "HKEYS"       -> {:hkeys, args}
           "HVALS"       -> {:hvals, args}
           "HEXISTS"     -> {:hexists, args}
+          "HSTRLEN"     -> {:hstrlen, args}
+          "HINCRBY"     -> {:hincrby, args}
           cmd ->
             IO.puts "Parser: unknown command: #{inspect cmd}"
             nil

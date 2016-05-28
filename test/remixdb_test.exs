@@ -580,7 +580,7 @@ defmodule RemixdbTest do
     end
 
     @tag current: true
-    test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL", %{client: client} do
+    test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL, HGETALL, HSTRLEN, HSETNX, HINCRBY", %{client: client} do
       val = client |> Exredis.query(["HSET", "myhash", "name", "john"])
       assert val === "1"
       val = client |> Exredis.query(["HSET", "myhash", "name", "john"])
@@ -589,6 +589,9 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["HLEN", "myhash"])
       assert val === "2"
+
+      val = client |> Exredis.query(["HGETALL", "myhash"])
+      assert (val |> Enum.sort) === (["name", "john", "age", "30"] |> Enum.sort)
 
       val = client |> Exredis.query(["HGET", "myhash", "name"])
       assert val === "john"
@@ -613,10 +616,39 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["HVALS", "unknown_hash"])
       assert val === []
 
+      val = client |> Exredis.query(["HMSET", "myhash", "city", "SF", "state", "CA", "name", "john"])
+      assert val === "OK"
+      val = client |> Exredis.query(["HGET", "myhash", "city"])
+      assert val === "SF"
+
+      val = client |> Exredis.query(["HMGET", "myhash", "city", "state", "name", "unknown_field"])
+      assert val === ["SF", "CA", "john", :undefined]
+
+      val = client |> Exredis.query(["HMGET", "unknown_hash", "city", "state"])
+      assert val === [:undefined, :undefined]
+
+      val = client |> Exredis.query(["HSTRLEN", "myhash", "name"])
+      assert val === ("john" |> String.length |> Integer.to_string)
+      val = client |> Exredis.query(["HSTRLEN", "unknown_hash", "name"])
+      assert val === "0"
+      val = client |> Exredis.query(["HSTRLEN", "myhash", "unknown_set"])
+      assert val === "0"
+
       client |> Exredis.query(["HSET", "myhash", "city", "SF"])
       val = client |> Exredis.query(["HDEL", "myhash", "city", "unknown_field", "name"])
       assert val === "2"
 
+      val = client |> Exredis.query(["HSETNX", "myhash", "city", "SF"])
+      assert val === "1"
+      val = client |> Exredis.query(["HSETNX", "myhash", "city", "SF"])
+      assert val === "0"
+
+      val = client |> Exredis.query(["HINCRBY", "myhash", "counter", 3])
+      assert val === "3"
+      val = client |> Exredis.query(["HINCRBY", "myhash", "counter", 300])
+      assert val === "303"
+      val = client |> Exredis.query(["HINCRBY", "myhash", "counter", -600])
+      assert val === "-297"
       # SantoshTODO
       # val = client |> Exredis.query(["HDEL", "myhash", "city", "unknown_field", "name", "age"])
       # assert val === "1"
