@@ -4,6 +4,12 @@ Remixdb
 ## A fully distributed NoSQL database, built on the Redis protocol
 RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM.
 
+## Why do this?
+Conceptually thinking of every key-value as an Actor/Erlang Process, offers many advantages, besides the obvious disadvantage of being constrained by the number of processes I can spawn in a single BEAM instance.  Here are some:
+
+- Clustering and sharding: It's a lot easier cloning a process on a different node in the cluster.
+- Fault Tolerance: Being able to bring back a key-value process when it goes down based on some last known state is trivial.
+- Parallelism: Having each unit of computation be it's own Erlang process means we get to take full advantage of all cores in the cluster.
 
 ## Features
 - True Parallelism: Unlike Redis or Memcached, which are single threaded, RemixDB is built to take advantage of all the cores on your machine.
@@ -17,9 +23,19 @@ Finally:
 Simple, scalability. What do I mean by this? The idea that you can grow your cluster in real time, without a shutdown on a rock-solid VM is extremely appealing to me. I am **not** trying to compete with Redis or Memcached in terms of performance. Instead, what I am trying to do is offer an alternative where you can scale your NoSQL DB pretty much how to the limits.
 
 ## Getting Started
-TBD
+- Download from hex
+- Start it
 ### Installing
-TBD
+- Install Erlang
+- Install Elixir
+- Install hex
+
+## Clustering
+### Adding nodes to the cluster
+- TBD
+### Rebalancing the cluster
+- TBD
+
 ### Starting RemixDB
 TBD
 ### Making backups
