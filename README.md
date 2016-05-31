@@ -48,3 +48,6 @@ TBD
 - Pub Sub commands
 - LUA scripting stuff
 
+## Author
+
+Santosh Kumar :: santosh79@gmail.com :: @santosh79
