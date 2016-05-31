@@ -23,8 +23,7 @@ Finally:
 Simple, scalability. What do I mean by this? The idea that you can grow your cluster in real time, without a shutdown on a rock-solid VM is extremely appealing to me. I am **not** trying to compete with Redis or Memcached in terms of performance. Instead, what I am trying to do is offer an alternative where you can scale your NoSQL DB pretty much how to the limits.
 
 ## Getting Started
-- Download from hex
-- Start it
+- TBD
 ### Installing
 - Install Erlang
 - Install Elixir
@@ -40,4 +39,10 @@ Simple, scalability. What do I mean by this? The idea that you can grow your clu
 TBD
 ### Making backups
 TBD
+
+## Missing commands
+- Sorted set implementation
+- Blocking commands
+- Pub Sub commands
+- LUA scripting stuff
 
