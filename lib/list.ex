@@ -1,7 +1,7 @@
 defmodule Remixdb.List do
   use GenServer
   def start(key_name) do
-    GenServer.start __MODULE__, {:ok, key_name}, []
+    GenServer.start_link __MODULE__, {:ok, key_name}, []
   end
 
   def init({:ok, key_name}) do
