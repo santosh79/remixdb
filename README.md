@@ -25,10 +25,21 @@ Simple, scalability. What do I mean by this? The idea that you can grow your clu
 ## Getting Started
 - TBD
 
-### Installing
+### Playing around with Remixdb
 - Install Erlang
 - Install Elixir
-- Install hex
+
+Git clone this repo:
+  
+    git clone https://github.com/santosh79/remixdb
+    mix escript.build
+    ./remixdb
+    
+Launch redis-cli:
+  
+    redis-cli
+    SET FOO "bar"
+    GET FOO
 
 ## Clustering
 ### Adding nodes to the cluster
