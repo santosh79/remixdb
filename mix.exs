@@ -8,6 +8,7 @@ defmodule Remixdb.Mixfile do
      default_task: "remixdb",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     escript: [main_module: Remixdb.Starter],
      deps: deps]
   end
 

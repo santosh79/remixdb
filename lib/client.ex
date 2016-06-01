@@ -1,15 +1,14 @@
 import Remixdb.KeyHandler, only: [flushall: 0, dbsize: 0, get_pid: 2, get_or_create_pid: 2, exists?: 1, rename_key: 2, renamenx_key: 2]
 
 defmodule Remixdb.Client do
-  def start(socket) do
-    spawn Remixdb.Client, :loop, [socket]
+  def start_link(socket) do
+    spawn_link Remixdb.Client, :loop, [socket]
   end
 
   def loop(socket) do
     stream = %Remixdb.Socket{socket: socket}
     spawn_link Remixdb.Parser, :start, [stream, self]
     socket |>
-    # print_new_connection |>
     serve
   end
 
@@ -142,13 +141,13 @@ defmodule Remixdb.Client do
         perform_store_command &Remixdb.Set.sinterstore/2, args
       {:hincrby, [key, field, val]} ->
         get_or_create_pid(:hash, key) |>
-        Remixdb.Hash.hincrby field, val
+        Remixdb.Hash.hincrby(field, val)
       {:hset, [key, field, val]} ->
         get_or_create_pid(:hash, key) |>
-        Remixdb.Hash.hset %{field => val}
+        Remixdb.Hash.hset(%{field => val})
       {:hsetnx, [key, field, val]} ->
         get_or_create_pid(:hash, key) |>
-        Remixdb.Hash.hsetnx field, val
+        Remixdb.Hash.hsetnx(field, val)
       {:hlen, [key]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hlen
       {:hdel, [key|fields]} ->
