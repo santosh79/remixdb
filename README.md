@@ -25,7 +25,7 @@ Simple, scalability. What do I mean by this? The idea that you can grow your clu
 ## Getting Started
 - TBD
 
-### Playing around with Remixdb
+### Playing around Remixdb
 - Install Erlang
 - Install Elixir
 
