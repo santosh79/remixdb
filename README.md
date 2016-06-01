@@ -38,8 +38,10 @@ Git clone this repo:
 Launch redis-cli:
   
     redis-cli
-    SET FOO "bar"
-    GET FOO
+    SADD directors "Keanu Reeves" "Christopher Nolan" "James Cameron"
+    SADD actors "Keanu Reeves" "Will Smith"
+    SINTERSTORE actors_who_are_directors actors directors
+    SMEMBERS actors_who_are_directors
 
 ## Clustering
 ### Adding nodes to the cluster
