@@ -44,6 +44,7 @@ TBD
 
 ## Missing commands
 - Sorted set implementation
+- Bitmaps & HyperLogLogs
 - Blocking commands
 - Pub Sub commands
 - LUA scripting stuff
