@@ -5,7 +5,7 @@ defmodule Remixdb.Hash do
   end
 
   def init({:ok, key_name}) do
-    {:ok, %{items: Map.new(), key_name: key_name}}
+    {:ok, %{items: HashDict.new(), key_name: key_name}}
   end
 
   def hset(name, new_items) do
@@ -72,22 +72,22 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call(:hkeys, _from, %{items: items} = state) do
-    keys = items |> Map.keys
+    keys = items |> Dict.keys
     {:reply, keys, state}
   end
 
   def handle_call(:hvals, _from, %{items: items} = state) do
-    vals = items |> Map.values
+    vals = items |> Dict.values
     {:reply, vals, state}
   end
 
   def handle_call({:hstrlen, field}, _from, %{items: items} = state) do
-    str_len = Map.get(items, field, "") |> String.length
+    str_len = Dict.get(items, field, "") |> String.length
     {:reply, str_len, state}
   end
 
   def handle_call({:hexists, field}, _from, %{items: items} = state) do
-    exists = case Map.has_key?(items, field) do
+    exists = case Dict.has_key?(items, field) do
       true -> 1
       _    -> 0
     end
@@ -96,7 +96,7 @@ defmodule Remixdb.Hash do
 
   def handle_call({:hmget, fields}, _from, %{items: items} = state) do
     results = fields |> Enum.map(fn(field) ->
-      Map.get(items, field, :undefined)
+      Dict.get(items, field, :undefined)
     end)
     {:reply, results, state}
   end
@@ -117,8 +117,8 @@ defmodule Remixdb.Hash do
 
   def handle_call({:hdel, fields}, _from, %{items: items} = state) do
     fields_set         = fields |> MapSet.new
-    keys_that_remain   = items |> Map.keys |> MapSet.new |> MapSet.difference(fields_set)
-    num_fields_removed = (items |> Map.keys |> Enum.count) - (keys_that_remain |> Enum.count)
+    keys_that_remain   = items |> Dict.keys |> MapSet.new |> MapSet.difference(fields_set)
+    num_fields_removed = (items |> Dict.keys |> Enum.count) - (keys_that_remain |> Enum.count)
     updated_items = keys_that_remain |> Enum.reduce(%{}, fn(key, acc) ->
       val = Dict.get(items, key)
       Dict.put(acc, key, val)
@@ -129,7 +129,7 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hget, field}, _from, %{items: items} = state) do
-    val = Map.get(items, field, :undefined)
+    val = Dict.get(items, field, :undefined)
     {:reply, val, state}
   end
 
@@ -141,7 +141,7 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hsetnx, field, val}, _from, %{items: items} = state) do
-    changed? = case Map.has_key?(items, field) do
+    changed? = case Dict.has_key?(items, field) do
       true -> 0
       _    -> 1
     end
@@ -151,8 +151,8 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hset, new_items}, _from, %{items: items} = state) do
-    new_key = Map.keys(new_items) |> List.first
-    return_val = case Map.has_key?(items, new_key) do
+    new_key = Dict.keys(new_items) |> List.first
+    return_val = case Dict.has_key?(items, new_key) do
       true -> 0
       _    -> 1
     end
@@ -167,7 +167,7 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call(:hlen, _from, %{items: items} = state) do
-    num_items = items |> Map.keys |> Enum.count
+    num_items = items |> Dict.keys |> Enum.count
     {:reply, num_items, state}
   end
 
@@ -176,7 +176,7 @@ defmodule Remixdb.Hash do
   end
 
   defp to_list(items) when is_map(items) do
-    items |> Map.to_list |> flatten
+    items |> Dict.to_list |> flatten
   end
   defp flatten(items) do; flatten(items, []); end
   defp flatten([], acc) do; acc |> :lists.reverse; end
