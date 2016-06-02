@@ -1,5 +1,6 @@
 Remixdb
 =======
+[![Build Status](https://travis-ci.org/santosh79/remixdb.svg?branch=master)](https://travis-ci.org/santosh79/remixdb)
 
 ## A fully distributed NoSQL database, built on the Redis protocol
 RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM.
