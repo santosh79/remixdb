@@ -1,42 +1,28 @@
 import Remixdb.KeyHandler, only: [flushall: 0, dbsize: 0, get_pid: 2, get_or_create_pid: 2, exists?: 1, rename_key: 2, renamenx_key: 2]
+import Remixdb.ResponseHandler, only: [send_response: 2]
 
 defmodule Remixdb.Client do
+  use GenServer
   def start_link(socket) do
-    spawn_link Remixdb.Client, :loop, [socket]
+    GenServer.start_link __MODULE__, {:ok, socket}, []
   end
 
-  def loop(socket) do
+  def init({:ok, socket}) do
+    send self, :real_init
+    {:ok, socket}
+  end
+
+  def handle_info(:real_init, socket) do
     stream = %Remixdb.Socket{socket: socket}
-    spawn_link Remixdb.Parser, :start, [stream, self]
-    socket |>
-    serve
+    Remixdb.Parser.start_link stream, self
+    {:noreply, socket}
   end
 
-  def serve(socket) do
-    import Remixdb.ResponseHandler, only: [send_response: 2]
-    response = get_response
-    socket |> send_response(response) |> serve
-  end
-
-  defp print_new_connection(socket) do
-    IO.puts "new connection from"
-    print_sock_info
-    socket
-  end
-
-  defp print_sock_info() do
-    remote_host = Process.get :remote_host
-    remote_port = Process.get :remote_port
-    IO.puts "remote host: "
-    IO.inspect remote_host
-    IO.puts "and remote port: #{remote_port}"
-  end
-
-  defp get_response() do
-    receive do
+  def handle_cast(msg, socket = state) do
+    response = case msg do
       {:ping, []} -> "PONG"
       {:ping, [res]} -> res
-      :flushall -> flushall
+      :flushall -> flushall()
       :dbsize -> dbsize()
       {:exists, [key]} ->
         case exists?(key) do
@@ -169,6 +155,8 @@ defmodule Remixdb.Client do
       {:hstrlen, [key, field]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hstrlen(field)
     end
+    socket |> send_response(response)
+    {:noreply, state}
   end
 
 

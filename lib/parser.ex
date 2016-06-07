@@ -1,9 +1,15 @@
 defmodule Remixdb.Parser do
-  def start(stream, client) do
-    spawn Remixdb.Parser, :loop, [stream, client]
+  use GenServer
+  def start_link(stream, client) do
+    GenServer.start_link __MODULE__, {:ok, stream, client}, []
   end
 
-  def loop(stream, client) do
+  def init({:ok, stream, client}) do
+    send self, :loop
+    {:ok, [stream, client]}
+  end
+
+  def handle_info(:loop, [stream, client] = state) do
     response = 
     case read_new_command(stream) do
       {:error, reason} ->
@@ -69,8 +75,9 @@ defmodule Remixdb.Parser do
             IO.puts "Parser: unknown command: #{inspect cmd}"
             nil
         end
-        send client, response
-        loop stream, client
+        GenServer.cast client, response
+        send self, :loop
+        {:noreply, state}
     end
   end
 
