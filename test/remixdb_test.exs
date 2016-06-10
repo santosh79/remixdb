@@ -580,6 +580,75 @@ defmodule RemixdbTest do
     end
 
     @tag current: true
+    test "SORTED SETS - ZADD, ZCARD, ZREM, ZRANGE, ZSCORE, ZRANK, ZCOUNT, ZINCRBY", %{client: client} do 
+      val = client |> Exredis.query(["ZADD", "myzset", 1, "one", 2, "two", 3, "three"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZCARD", "myzset"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZRANGE", "myzset", 0, -1])
+      assert val === ["one", "two", "three"]
+
+      # SantoshTODO: Test for wrong number of args
+
+      client |> Exredis.query(["ZADD", "myzset", 2, "dos"])
+      val = client |> Exredis.query(["ZRANGE", "myzset", 0, -1])
+      assert val === ["one", "dos", "two", "three"]
+
+      val = client |> Exredis.query(["ZRANK", "myzset", "three"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZRANK", "myzset", "non_existent_member"])
+      assert val === :undefined
+      val = client |> Exredis.query(["ZRANK", "unknown_zset", "non_existent_member"])
+      assert val === :undefined
+
+      # Duplicate elements check
+      val = client |> Exredis.query(["ZADD", "myzset", 4, "three"])
+      assert val === "0"
+      val = client |> Exredis.query(["ZSCORE", "myzset", "three"])
+      assert val === "4"
+      client |> Exredis.query(["ZADD", "myzset", 3, "three"])
+      val = client |> Exredis.query(["ZSCORE", "myzset", "three"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZSCORE", "unknown_zset", "three"])
+      assert val === :undefined
+
+
+      val = client |> Exredis.query(["ZREM", "unknown_zset", "three"])
+      assert val === "0"
+      val = client |> Exredis.query(["ZREM", "myzset", "three", "non_existent_member"])
+      assert val === "1"
+      val = client |> Exredis.query(["ZRANGE", "myzset", 0, -1])
+      assert val === ["one", "dos", "two"]
+
+      val = client |> Exredis.query(["ZCOUNT", "unknown_zset", "-inf", "+inf"])
+      assert val === "0"
+
+      client |> Exredis.query(["FLUSHALL"])
+
+      client |> Exredis.query(["ZADD", "myzset", 1, "one"])
+      client |> Exredis.query(["ZADD", "myzset", 2, "two"])
+      client |> Exredis.query(["ZADD", "myzset", 3, "three"])
+
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "-inf", "+inf"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "2", "3"])
+      assert val === "2"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "5", "8"])
+      assert val === "0"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "1", "3"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "1", "+inf"])
+      assert val === "3"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "-inf", "2"])
+      assert val === "2"
+
+      # Inclusive ranges
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "(1", "3"])
+      assert val === "2"
+      val = client |> Exredis.query(["ZCOUNT", "myzset", "(1", "+inf"])
+      assert val === "2"
+    end
+
     test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL, HGETALL, HSTRLEN, HSETNX, HINCRBY", %{client: client} do
       val = client |> Exredis.query(["HSET", "myhash", "name", "john"])
       assert val === "1"

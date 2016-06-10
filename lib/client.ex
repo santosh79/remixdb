@@ -154,6 +154,20 @@ defmodule Remixdb.Client do
         get_pid(:hash, key) |> Remixdb.Hash.hexists(field)
       {:hstrlen, [key, field]} ->
         get_pid(:hash, key) |> Remixdb.Hash.hstrlen(field)
+      {:zadd, [key|args]} ->
+        get_or_create_pid(:zset, key) |> Remixdb.ZSet.zadd(args)
+      {:zrem, [key|args]} ->
+        get_pid(:zset, key) |> Remixdb.ZSet.zrem(args)
+      {:zcard, [key]} ->
+        get_or_create_pid(:zset, key) |> Remixdb.ZSet.zcard
+      {:zcount, [key, min, max]} ->
+        get_pid(:zset, key) |> Remixdb.ZSet.zcount(min, max)
+      {:zrange, [key, start, stop]} ->
+        get_or_create_pid(:zset, key) |> Remixdb.ZSet.zrange(start, stop)
+      {:zrank, [key, member]} ->
+        get_pid(:zset, key) |> Remixdb.ZSet.zrank(member)
+      {:zscore, [key, member]} ->
+        get_pid(:zset, key) |> Remixdb.ZSet.zscore(member)
     end
     socket |> send_response(response)
     {:noreply, state}

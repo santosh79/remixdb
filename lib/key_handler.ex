@@ -50,6 +50,7 @@ defmodule Remixdb.KeyHandler do
       :string -> true
       :set    -> true
       :hash   -> true
+      :zset   -> true
     end
   end
 
@@ -126,6 +127,7 @@ defmodule Remixdb.KeyHandler do
           :list   -> Remixdb.List
           :set    -> Remixdb.Set
           :hash   -> Remixdb.Hash
+          :zset   -> Remixdb.ZSet
         end
         {:ok, pid} = key_type.start(key)
         pid
@@ -134,8 +136,9 @@ defmodule Remixdb.KeyHandler do
   end
 
   defp get_term(:string) do; :string; end
-  defp get_term(:set) do; :set; end
-  defp get_term(:list) do; :list; end
-  defp get_term(:hash) do; :hash; end
+  defp get_term(:set)    do; :set;    end
+  defp get_term(:list)   do; :list;   end
+  defp get_term(:hash)   do; :hash;   end
+  defp get_term(:zset)   do; :zset;   end
 end
 

@@ -71,6 +71,13 @@ defmodule Remixdb.Parser do
           "HEXISTS"     -> {:hexists, args}
           "HSTRLEN"     -> {:hstrlen, args}
           "HINCRBY"     -> {:hincrby, args}
+          "ZADD"        -> {:zadd, args}
+          "ZREM"        -> {:zrem, args}
+          "ZCARD"       -> {:zcard, args}
+          "ZRANGE"      -> {:zrange, args}
+          "ZRANK"       -> {:zrank, args}
+          "ZSCORE"      -> {:zscore, args}
+          "ZCOUNT"      -> {:zcount, args}
           cmd ->
             IO.puts "Parser: unknown command: #{inspect cmd}"
             nil
