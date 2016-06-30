@@ -1,3 +1,3 @@
-%{"eredis": {:hex, :eredis, "1.0.8"},
-  "exredis": {:hex, :exredis, "0.2.1"},
-  "red_black_tree": {:hex, :red_black_tree, "1.2.0"}}
+%{"eredis": {:hex, :eredis, "1.0.8", "ab4fda1c4ba7fbe6c19c26c249dc13da916d762502c4b4fa2df401a8d51c5364", [:rebar], []},
+  "exredis": {:hex, :exredis, "0.2.1", "9db2b227f24576eef62b00c795d97752986fd6e641f5772cf514ea9b4573e275", [:mix], [{:eredis, ">= 1.0.8", [hex: :eredis, optional: false]}]},
+  "red_black_tree": {:hex, :red_black_tree, "1.2.0", "710776dc25a6f7a9cf19bc1fa15c2587fce6af180cb70a4ed0b1e6af93c1eb29", [:mix], []}}
