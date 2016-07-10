@@ -31,7 +31,7 @@ defmodule Remixdb.Mixfile do
   defp deps do
     [
       { :exredis, ">= 0.2.1" },
-      {:red_black_tree, git: "https://github.com/santosh79/red_black_tree", tag: "0.1.0"}
+      {:red_black_tree, git: "https://github.com/santosh79/red_black_tree", tag: "0.1.4"}
     ]
   end
 end
