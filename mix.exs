@@ -3,7 +3,7 @@ defmodule Remixdb.Mixfile do
 
   def project do
     [app: :remixdb,
-     version: "0.0.1",
+     version: "0.0.2",
      elixir: "~> 1.2",
      default_task: "remixdb",
      build_embedded: Mix.env == :prod,
@@ -16,7 +16,9 @@ defmodule Remixdb.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger],
+     mod: {Remixdb, []}
+   ]
   end
 
   # Dependencies can be Hex packages:

@@ -1,6 +1,6 @@
 defmodule Remixdb.Starter do
   def main(_args) do
-    Remixdb.Server.start
+    Application.start :remixdb
     receive do
       after  :infinity -> true
     end
