@@ -2,7 +2,7 @@ defmodule RemixdbTest do
   defmodule Server do
     use ExUnit.Case
 
-    setup_all context do
+    setup_all _context do
       Remixdb.Server.start
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
       {:ok, %{client: client}}
@@ -364,7 +364,6 @@ defmodule RemixdbTest do
       assert val === "0"
 
       full_list =  ["a", "b", "c", "d"] 
-      full_set = full_list |> MapSet.new
       val = client |> Exredis.query(["SADD", "new_set"] ++ full_list)
       assert val === "4"
     end
@@ -494,7 +493,6 @@ defmodule RemixdbTest do
 
     test "SINTERSTORE", %{client: client} do
       full_list =  ["a", "b", "c", "d"] 
-      full_set = full_list |> MapSet.new
       client |> Exredis.query(["SADD", "key1"] ++ full_list)
 
       client |> Exredis.query(["SADD", "key2", "c"])
@@ -523,7 +521,6 @@ defmodule RemixdbTest do
 
     test "SUNIONSTORE", %{client: client} do
       full_list =  ["a", "b", "c", "d"] 
-      full_set = full_list |> MapSet.new
       client |> Exredis.query(["SADD", "key1"] ++ full_list)
 
       client |> Exredis.query(["SADD", "key2", "c"])
@@ -552,7 +549,6 @@ defmodule RemixdbTest do
 
     test "SDIFFSTORE", %{client: client} do
       full_list =  ["a", "b", "c", "d"] 
-      full_set = full_list |> MapSet.new
       client |> Exredis.query(["SADD", "key1"] ++ full_list)
 
       client |> Exredis.query(["SADD", "key2", "c"])

@@ -30,7 +30,7 @@ end
 defmodule RemixdbTest.SimpleServer do
   use ExUnit.Case
 
-  setup_all context do
+  setup_all _context do
     :ok
   end
 
