@@ -419,6 +419,7 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
+    @tag current: true
     test "SMOVE", %{client: client} do
       client |> Exredis.query(["SADD", "key1", "a"])
 
@@ -437,9 +438,8 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SMOVE", "unknown_set", "key2", "a"])
       assert val === "0"
 
-      # SantoshTODO
-      # val = client |> Exredis.query(["EXISTS", "key1"])
-      # assert val === "0"
+      val = client |> Exredis.query(["EXISTS", "key1"])
+      assert val === "0"
     end
 
     test "SREM", %{client: client} do
@@ -457,10 +457,9 @@ defmodule RemixdbTest do
 
       val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
       assert val === "0"
-      # SantoshTODO
-      # val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
-      # val = client |> Exredis.query(["EXISTS", "key1"])
-      # assert val === "0"
+      val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
+      val = client |> Exredis.query(["EXISTS", "key1"])
+      assert val === "0"
     end
 
     test "SPOP", %{client: client} do
@@ -485,9 +484,8 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SPOP", "key2"])
       assert val === "a"
 
-      # SantoshTODO
-      # val = client |> Exredis.query(["EXISTS", "key2"])
-      # assert val === "0"
+      val = client |> Exredis.query(["EXISTS", "key2"])
+      assert val === "0"
     end
 
     test "SINTERSTORE", %{client: client} do

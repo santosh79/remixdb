@@ -120,6 +120,7 @@ defmodule Remixdb.Set do
     num_items_removed = MapSet.intersection(items, new_items) |> Enum.count
     new_items         = MapSet.difference(items, new_items)
     new_state         = new_items |> update_state(state)
+    Remixdb.Keys.popped_out? new_items, self
     {:reply, num_items_removed, new_state}
   end
 
@@ -137,6 +138,7 @@ defmodule Remixdb.Set do
     rand_item = items |> get_rand_item
     new_items = items |> MapSet.new |> MapSet.delete(rand_item)
     new_state = new_items |> update_state(state)
+    Remixdb.Keys.popped_out? new_items, self
     {:reply, rand_item, new_state}
   end
 
@@ -154,10 +156,19 @@ defmodule Remixdb.Set do
       0 -> {0, items}
     end
     new_state = new_items |> update_state(state)
+    Remixdb.Keys.popped_out? new_items, self
     {:reply, num_items_moved, new_state}
   end
 
-  # def terminate(:normal, _state) do; :ok; end
+  def handle_cast(:stop, state) do
+    {:stop, :normal, state}
+  end
+
+  # SantoshTODO: Use supervisors for this
+  def terminate(:normal, %{key_name: key_name}) do
+    Remixdb.KeyHandler.remove key_name
+    :ok
+  end
 
   defp get_rand_item(items) do
     items |> Enum.shuffle |> Enum.take(1) |> List.first
