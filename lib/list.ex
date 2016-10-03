@@ -131,7 +131,11 @@ defmodule Remixdb.List do
     end
   end
 
-  # SantoshTODO: Mixin Termination stuff
+  def handle_cast(:stop, state) do
+    {:stop, :normal, state}
+  end
+
+  # SantoshTODO: Use supervisors for this
   def terminate(:normal, %{key_name: key_name}) do
     Remixdb.KeyHandler.remove key_name
     :ok

@@ -1,8 +1,7 @@
 defmodule Remixdb.Keys do
-  # SantoshTODO
-  def popped_out?(items, name) do
-    # spawn(fn ->
-    #   GenServer.stop(name, :normal)
-    # end)
+  def popped_out?(items, pid) when is_pid(pid) do
+    if ((items |> Enum.count) <= 0) do
+      GenServer.cast pid, :stop
+    end
   end
 end

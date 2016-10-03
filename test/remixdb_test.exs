@@ -257,9 +257,9 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LPOP", "mylist"])
       assert val === :undefined
 
-      # SantoshTODO
-      # val = client |> Exredis.query(["EXISTS", "mylist"])
-      # assert val === "0"
+      # SantoshTODO -- When we have popped out the list, it should be empty
+      val = client |> Exredis.query(["EXISTS", "mylist"])
+      assert val === "0"
 
       val = client |> Exredis.query(["LPOP", "unknown_list"])
       assert val === :undefined
