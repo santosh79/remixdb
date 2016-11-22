@@ -47,6 +47,9 @@ defmodule Remixdb.Client do
       {:decrby, [key, val]} ->
         get_or_create_pid(:string, key) |>
         Remixdb.String.decrby(val)
+      {:getrange, [key, start_val, end_val]} ->
+        get_pid(:string, key) |>
+        Remixdb.String.getrange(start_val, end_val)
       {:incr, [key]} ->
         get_or_create_pid(:string, key) |>
         Remixdb.String.incr

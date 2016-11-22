@@ -109,6 +109,9 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SET", "mykey", "This is a string"])
       assert val === "OK"
 
+      val = client |> Exredis.query(["GETRANGE", "unkown_key", 0, 3])
+      assert val === ""
+
       val = client |> Exredis.query(["GETRANGE", "mykey", 0, 3])
       assert val === "This"
 

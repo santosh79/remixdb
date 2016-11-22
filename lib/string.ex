@@ -38,6 +38,15 @@ defmodule Remixdb.String do
     GenServer.call(name, {:decrby, val})
   end
 
+  def decrby(name, val) do
+    GenServer.call(name, {:decrby, val})
+  end
+
+  def getrange(nil, start_val, end_val) do; ""; end
+  def getrange(name, start_val, end_val) do
+    GenServer.call(name, {:getrange, start_val, end_val})
+  end
+
   def append(name, val) do
     GenServer.call(name, {:append, val})
   end
@@ -92,6 +101,15 @@ defmodule Remixdb.String do
     end
     new_state = Dict.put(state, :val, new_val)
     {:reply, new_val, new_state}
+  end
+
+  def handle_call({:getrange, start_val_str, end_val_str},  _from, state) do
+    start_val = start_val_str |> String.to_integer
+    end_val   = end_val_str |> String.to_integer
+    val_as_list = state |> Dict.get(:val) |> String.split("") |>
+      Enum.reverse |> Enum.drop(1) |> Enum.reverse
+    result = Remixdb.List.get_items_in_range(start_val, end_val, val_as_list) |> List.to_string
+    {:reply, result, state}
   end
 
   def handle_call({:decrby, val_str}, _from, state) do

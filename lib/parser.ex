@@ -27,6 +27,7 @@ defmodule Remixdb.Parser do
           "INCR"        -> {:incr, args}
           "DECR"        -> {:decr, args}
           "DECRBY"      -> {:decrby, args}
+          "GETRANGE"    -> {:getrange, args}
           "INCRBY"      -> {:incrby, args}
           "SETEX"       -> {:setex, args}
           "TTL"         -> {:ttl, args}

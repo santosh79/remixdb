@@ -141,7 +141,7 @@ defmodule Remixdb.List do
     :ok
   end
 
-  defp get_items_in_range(start, stop, items) do
+  def get_items_in_range(start, stop, items) do
     length = items |> Enum.count
     take_amt = (case (stop >= 0) do
       true -> stop
