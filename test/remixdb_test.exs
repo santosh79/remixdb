@@ -104,6 +104,24 @@ defmodule RemixdbTest do
       assert val === "0"
     end
 
+    @tag current: true
+    test "GETRANGE", %{client: client} do
+      val = client |> Exredis.query(["SET", "mykey", "This is a string"])
+      assert val === "OK"
+
+      val = client |> Exredis.query(["GETRANGE", "mykey", 0, 3])
+      assert val === "This"
+
+      val = client |> Exredis.query(["GETRANGE", "mykey", -3, -1])
+      assert val === "ing"
+
+      val = client |> Exredis.query(["GETRANGE", "mykey", 0, -1])
+      assert val === "This is a string"
+
+      val = client |> Exredis.query(["GETRANGE", "mykey", 10, 100])
+      assert val === "string"
+    end
+
     test "append - existing key", %{client: client} do
       client |> Exredis.query(["SET", "mykey", "hello"])
       val = client |> Exredis.query(["APPEND", "mykey", " world"])
@@ -419,7 +437,6 @@ defmodule RemixdbTest do
       assert val === :undefined
     end
 
-    @tag current: true
     test "SMOVE", %{client: client} do
       client |> Exredis.query(["SADD", "key1", "a"])
 
