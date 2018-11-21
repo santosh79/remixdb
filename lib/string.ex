@@ -127,7 +127,7 @@ defmodule Remixdb.String do
 
   # SantoshTODO: Mixin Termination stuff
   def handle_call({:setex, timeout, val}, _from, state) do
-    Remixdb.String.expire_with_no_response self, timeout
+    Remixdb.String.expire_with_no_response self(), timeout
     new_state =  state |> Map.merge(%{timeout: timeout, val: val})
     {:reply, :ok, new_state}
   end

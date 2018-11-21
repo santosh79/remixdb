@@ -8,13 +8,13 @@ defmodule Remixdb.Client do
   end
 
   def init({:ok, socket}) do
-    send self, :real_init
+    send self(), :real_init
     {:ok, socket}
   end
 
   def handle_info(:real_init, socket) do
     stream = %Remixdb.Socket{socket: socket}
-    Remixdb.Parser.start_link stream, self
+    Remixdb.Parser.start_link stream, self()
     {:noreply, socket}
   end
   def handle_info(_, state), do: {:noreply, state}

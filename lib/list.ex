@@ -180,7 +180,7 @@ defmodule Remixdb.List do
             {h, (t |> :lists.reverse)}
         end
     end
-    Remixdb.Keys.popped_out? updated_items, self
+    Remixdb.Keys.popped_out? updated_items, self()
     new_state = update_state state, updated_items
     {:reply, head, new_state}
   end

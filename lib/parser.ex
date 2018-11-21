@@ -5,7 +5,7 @@ defmodule Remixdb.Parser do
   end
 
   def init({:ok, stream, client}) do
-    send self, :loop
+    send self(), :loop
     {:ok, [stream, client]}
   end
 
@@ -76,7 +76,7 @@ defmodule Remixdb.Parser do
             nil
         end
         GenServer.cast client, response
-        send self, :loop
+        send self(), :loop
         {:noreply, state}
     end
   end
