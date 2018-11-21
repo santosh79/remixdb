@@ -18,9 +18,9 @@ defmodule Remixdb.NameServerTest do
   def handle(request, dict) do
     case request do
       {:get, key} ->
-        {Dict.get(dict, key), dict}
+        {Map.get(dict, key), dict}
       {:set, k, v} ->
-        {:ok, (dict |> Dict.put(k, v))}
+        {:ok, (dict |> Map.put(k, v))}
       {:find, _k} ->
         {"hey", dict}
     end

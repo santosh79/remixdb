@@ -164,7 +164,7 @@ defmodule Remixdb.Set do
   end
 
   defp update_state(updated_items, state) do
-    Dict.merge(state, %{items: updated_items})
+    Map.merge(state, %{items: updated_items})
   end
 
   defp perform_store_command(func, keys, %{items: items} = state) do

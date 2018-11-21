@@ -67,7 +67,7 @@ defmodule Remixdb.KeyHandler do
 
   def handle_call({:get_or_create_pid, type_of_key, key}, _from, state) do
     pid           = create_pid_if_not_exists?(type_of_key, state, key)
-    updated_state = Dict.put(state, key, pid)
+    updated_state = Map.put(state, key, pid)
     {:reply, pid, updated_state}
   end
 
@@ -77,37 +77,37 @@ defmodule Remixdb.KeyHandler do
   end
 
   def handle_call(:dbsize, _from, state) do
-    count = state |> Dict.keys |> Enum.count
+    count = state |> Map.keys |> Enum.count
     {:reply, count, state}
   end
 
   def handle_call(:flushall, _from, state) do
-    state |> Dict.values |> Enum.each(fn(pid) ->
+    state |> Map.values |> Enum.each(fn(pid) ->
       Process.exit(pid, :kill)
     end)
     {:reply, :ok, %{}}
   end
 
   def handle_cast({:remove, key}, state)  do
-    new_state = Dict.delete(state, key)
+    new_state = Map.delete(state, key)
     {:noreply, new_state}
   end
 
   def handle_call({:rename_key, old_name, new_name}, _from, state)  do
-    case Dict.get(state, old_name) do
+    case Map.get(state, old_name) do
       nil ->
         {:reply, "ERR no such key", state}
       pid ->
-        new_state = state |> Dict.drop([old_name]) |> Dict.put(new_name, pid)
+        new_state = state |> Map.drop([old_name]) |> Map.put(new_name, pid)
         {:reply, :ok, new_state}
     end
   end
 
   def handle_call({:renamenx_key, old_name, new_name}, _from, state)  do
-    {response, new_state} = case Dict.get(state, old_name) do
+    {response, new_state} = case Map.get(state, old_name) do
       nil -> {"ERR no such key", state}
-      val -> case Dict.get(state, new_name) do
-        nil -> {1, (state |> Dict.drop([old_name]) |> Dict.put(new_name, val))}
+      val -> case Map.get(state, new_name) do
+        nil -> {1, (state |> Map.drop([old_name]) |> Map.put(new_name, val))}
         _   -> {0, state}
       end
     end
@@ -115,7 +115,7 @@ defmodule Remixdb.KeyHandler do
   end
 
   defp lookup_pid(state, key) do
-    Dict.get(state, key)
+    Map.get(state, key)
   end
 
   defp create_pid_if_not_exists?(type_of_key, state, key) do

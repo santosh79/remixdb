@@ -165,7 +165,7 @@ defmodule Remixdb.List do
   end
 
   defp pop_items_from_list(pop_direction, state) do
-    {head, updated_items} = case Dict.get(state, :items) do
+    {head, updated_items} = case Map.get(state, :items) do
       []    ->
         {:undefined, []}
       list ->
@@ -184,6 +184,6 @@ defmodule Remixdb.List do
   end
 
   defp update_state(state, updated_items) do
-    Dict.merge(state, %{items: updated_items})
+    Map.merge(state, %{items: updated_items})
   end
 end

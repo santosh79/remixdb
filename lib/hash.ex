@@ -112,7 +112,7 @@ defmodule Remixdb.Hash do
   end
   defp to_map([], acc) do; acc; end
   defp to_map([k,v|rest], acc) do
-    to_map rest, Dict.put(acc, k, v)
+    to_map rest, Map.put(acc, k, v)
   end
 
   def handle_call({:hdel, fields}, _from, %{items: items} = state) do
@@ -120,8 +120,8 @@ defmodule Remixdb.Hash do
     keys_that_remain   = items |> Map.keys |> MapSet.new |> MapSet.difference(fields_set)
     num_fields_removed = (items |> Map.keys |> Enum.count) - (keys_that_remain |> Enum.count)
     updated_items = keys_that_remain |> Enum.reduce(%{}, fn(key, acc) ->
-      val = Dict.get(items, key)
-      Dict.put(acc, key, val)
+      val = Map.get(items, key)
+      Map.put(acc, key, val)
     end)
 
     new_state = update_state updated_items, state
@@ -134,8 +134,8 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hincrby, field, val}, _from, %{items: items} = state) do
-    new_val       = Dict.get(items, field, 0) + (val |> String.to_integer)
-    updated_items = Dict.put(items, field, new_val)
+    new_val       = Map.get(items, field, 0) + (val |> String.to_integer)
+    updated_items = Map.put(items, field, new_val)
     new_state     = update_state updated_items, state
     {:reply, new_val, new_state}
   end
@@ -145,7 +145,7 @@ defmodule Remixdb.Hash do
       true -> 0
       _    -> 1
     end
-    updated_items = Dict.put(items, field, val)
+    updated_items = Map.put(items, field, val)
     new_state     = update_state updated_items, state
     {:reply, changed?, new_state}
   end
@@ -156,7 +156,7 @@ defmodule Remixdb.Hash do
       true -> 0
       _    -> 1
     end
-    updated_items = Dict.merge items, new_items
+    updated_items = Map.merge items, new_items
     new_state     = update_state updated_items, state
     {:reply, return_val, new_state}
   end
@@ -172,7 +172,7 @@ defmodule Remixdb.Hash do
   end
 
   defp update_state(updated_items, state) do
-    Dict.merge(state, %{items: updated_items})
+    Map.merge(state, %{items: updated_items})
   end
 
   defp to_list(items) when is_map(items) do

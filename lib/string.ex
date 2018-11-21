@@ -66,67 +66,67 @@ defmodule Remixdb.String do
 
   def handle_call({:getset, val}, _from, state) do
     %{val: old_val} = state
-    new_state       = Dict.put(state, :val, val)
+    new_state       = Map.put(state, :val, val)
     {:reply, old_val, new_state}
   end
 
   def handle_call({:set, val}, _from, state) do
-    new_state = Dict.put(state, :val, val)
+    new_state = Map.put(state, :val, val)
     {:reply, :ok, new_state}
   end
 
   def handle_call({:incrby, val_str}, _from, state) do
     to_i = &String.to_integer/1
-    new_val = case Dict.get(state, :val) do
+    new_val = case Map.get(state, :val) do
       :undefined -> to_i.(val_str)
       old_val    -> (old_val + to_i.(val_str))
     end
-    new_state = Dict.put(state, :val, new_val)
+    new_state = Map.put(state, :val, new_val)
     {:reply, new_val, new_state}
   end
 
   def handle_call(:decr, _from, state) do
-    new_val = case Dict.get(state, :val) do
+    new_val = case Map.get(state, :val) do
       :undefined -> -1
       old_val    -> old_val - 1
     end
-    new_state = Dict.put(state, :val, new_val)
+    new_state = Map.put(state, :val, new_val)
     {:reply, new_val, new_state}
   end
 
   def handle_call({:decrby, val_str}, _from, state) do
     to_i = &String.to_integer/1
-    new_val = case Dict.get(state, :val) do
+    new_val = case Map.get(state, :val) do
       :undefined -> to_i.(val_str) * -1
       old_val    -> (old_val - to_i.(val_str))
     end
-    new_state = Dict.put(state, :val, new_val)
+    new_state = Map.put(state, :val, new_val)
     {:reply, new_val, new_state}
   end
 
   def handle_call(:incr, _from, state) do
-    new_val = case Dict.get(state, :val) do
+    new_val = case Map.get(state, :val) do
       :undefined -> 1
       old_val    -> old_val + 1
     end
-    new_state = Dict.put(state, :val, new_val)
+    new_state = Map.put(state, :val, new_val)
     {:reply, new_val, new_state}
   end
 
   def handle_call({:append, val}, _from, state) do
-    new_val = case Dict.get(state, :val) do
+    new_val = case Map.get(state, :val) do
       :undefined -> val
       old_val    -> (old_val <> val)
     end
     string_length = new_val |> String.length
-    new_state     = Dict.put(state, :val, new_val)
+    new_state     = Map.put(state, :val, new_val)
     {:reply, string_length, new_state}
   end
 
   # SantoshTODO: Mixin Termination stuff
   def handle_call({:setex, timeout, val}, _from, state) do
     Remixdb.String.expire_with_no_response self, timeout
-    new_state =  state |> Dict.merge(%{timeout: timeout, val: val})
+    new_state =  state |> Map.merge(%{timeout: timeout, val: val})
     {:reply, :ok, new_state}
   end
 
