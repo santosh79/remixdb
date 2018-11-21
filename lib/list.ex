@@ -67,6 +67,8 @@ defmodule Remixdb.List do
     GenServer.call(name, {:lset, String.to_integer(idx), val})
   end
 
+  def handle_info(_, state), do: {:noreply, state}
+
   def handle_call(:llen, _from, %{items: items} = state) do
     list_sz = items |> Enum.count
     {:reply, list_sz, state}

@@ -10,6 +10,7 @@ defmodule Remixdb.TcpServer do
     end)
   end
 
+  def handle_info(_, state), do: {:noreply, state}
   defp loop_acceptor(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
     Remixdb.Client.start_link client

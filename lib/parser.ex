@@ -80,6 +80,7 @@ defmodule Remixdb.Parser do
         {:noreply, state}
     end
   end
+  def handle_info(_, state), do: {:noreply, state}
 
   defp read_new_command(stream) do
     case read_number_args(stream) do

@@ -17,6 +17,7 @@ defmodule Remixdb.Client do
     Remixdb.Parser.start_link stream, self
     {:noreply, socket}
   end
+  def handle_info(_, state), do: {:noreply, state}
 
   def handle_cast(msg, socket = state) do
     response = case msg do

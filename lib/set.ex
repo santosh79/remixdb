@@ -89,6 +89,8 @@ defmodule Remixdb.Set do
     GenServer.call dest, {:sinterstore, keys}
   end
 
+  def handle_info(_, state), do: {:noreply, state}
+
   def handle_call({:sunionstore, keys}, _from, state) do
     {num_items, new_state} = perform_store_command &Remixdb.Set.sunion/1, keys, state
     {:reply, num_items, new_state}

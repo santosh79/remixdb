@@ -53,6 +53,8 @@ defmodule Remixdb.KeyHandler do
     end
   end
 
+  def handle_info(_, state), do: {:noreply, state}
+
   def handle_call({:get_pid, key_type, key}, _from, state) do
     case valid_keytype?(key_type) do
       true -> do_lookup(state, key)

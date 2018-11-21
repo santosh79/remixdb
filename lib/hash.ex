@@ -71,6 +71,7 @@ defmodule Remixdb.Hash do
     GenServer.call name, :hvals
   end
 
+  def handle_info(_, state), do: {:noreply, state}
   def handle_call(:hkeys, _from, %{items: items} = state) do
     keys = items |> Map.keys
     {:reply, keys, state}

@@ -59,6 +59,8 @@ defmodule Remixdb.String do
     end)
   end
 
+  def handle_info(_, state), do: {:noreply, state}
+
   def handle_call(:get, _from, state) do
     %{val: val} = state
     {:reply, val, state}
