@@ -55,16 +55,16 @@ defmodule Remixdb.KeyHandler do
 
   def handle_info(_, state), do: {:noreply, state}
 
+  def handle_cast({:remove, key}, state)  do
+    new_state = Map.delete(state, key)
+    {:noreply, new_state}
+  end
+
   def handle_call({:get_pid, key_type, key}, _from, state) do
     case valid_keytype?(key_type) do
       true -> do_lookup(state, key)
     end
     do_lookup state, key
-  end
-
-  defp do_lookup(state, key) do
-    pid = lookup_pid(state, key)
-    {:reply, pid, state}
   end
 
   def handle_call({:get_or_create_pid, type_of_key, key}, _from, state) do
@@ -88,11 +88,6 @@ defmodule Remixdb.KeyHandler do
       Process.exit(pid, :kill)
     end)
     {:reply, :ok, %{}}
-  end
-
-  def handle_cast({:remove, key}, state)  do
-    new_state = Map.delete(state, key)
-    {:noreply, new_state}
   end
 
   def handle_call({:rename_key, old_name, new_name}, _from, state)  do
@@ -139,5 +134,11 @@ defmodule Remixdb.KeyHandler do
   defp get_term(:set) do; :set; end
   defp get_term(:list) do; :list; end
   defp get_term(:hash) do; :hash; end
+
+  defp do_lookup(state, key) do
+    pid = lookup_pid(state, key)
+    {:reply, pid, state}
+  end
+
 end
 
