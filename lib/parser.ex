@@ -10,7 +10,6 @@ defmodule Remixdb.Parser do
   end
 
   def handle_info(:loop, [stream, client] = state) do
-    response = 
     case read_new_command(stream) do
       {:error, reason} ->
         IO.puts "parser bad request #{inspect reason}"

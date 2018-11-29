@@ -12,7 +12,7 @@ defmodule Remixdb.Set do
     GenServer.call name, {:sadd, MapSet.new(items)}
   end
 
-  def srem(nil, items) do; 0; end
+  def srem(nil, _items) do; 0; end
   def srem(name, items) do
     GenServer.call name, {:srem, MapSet.new(items)}
   end
@@ -55,7 +55,7 @@ defmodule Remixdb.Set do
     |> Enum.into([])
   end
 
-  def sinter([nil|rest]) do; []; end
+  def sinter([nil|_rest]) do; []; end
   def sinter(items) do
     first_item = items |> List.first |> Remixdb.Set.smembers |> MapSet.new
 
@@ -69,7 +69,7 @@ defmodule Remixdb.Set do
     |> Enum.into([])
   end
 
-  def sdiff([nil|rest]) do; []; end
+  def sdiff([nil|_rest]) do; []; end
   def sdiff([first|rest]) do
     first_elements = first |> Remixdb.Set.smembers |> MapSet.new
     rest_elements  = rest |> Remixdb.Set.sunion |> MapSet.new
@@ -96,7 +96,7 @@ defmodule Remixdb.Set do
     {:reply, num_items, new_state}
   end
 
-  def handle_call({:sdiffstore, keys}, _from, %{items: items} = state) do
+  def handle_call({:sdiffstore, keys}, _from, %{items: _items} = state) do
     {num_items, new_state} = perform_store_command &Remixdb.Set.sdiff/1, keys, state
     {:reply, num_items, new_state}
   end
@@ -169,7 +169,7 @@ defmodule Remixdb.Set do
     Map.merge(state, %{items: updated_items})
   end
 
-  defp perform_store_command(func, keys, %{items: items} = state) do
+  defp perform_store_command(func, keys, %{items: _items} = state) do
     result = func.(keys) |> MapSet.new
     num_items = result |> Enum.count
     new_state = update_state result, state

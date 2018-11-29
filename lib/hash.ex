@@ -102,18 +102,10 @@ defmodule Remixdb.Hash do
     {:reply, results, state}
   end
 
-  def handle_call({:hmset, fields}, _from, %{items: items} = state) do
+  def handle_call({:hmset, fields}, _from, %{items: _items} = state) do
     updated_items = to_map(fields)
     new_state     = update_state updated_items, state
     {:reply, "OK", new_state}
-  end
-
-  defp to_map(fields) do
-    to_map fields, %{}
-  end
-  defp to_map([], acc) do; acc; end
-  defp to_map([k,v|rest], acc) do
-    to_map rest, Map.put(acc, k, v)
   end
 
   def handle_call({:hdel, fields}, _from, %{items: items} = state) do
@@ -184,6 +176,14 @@ defmodule Remixdb.Hash do
   defp flatten([h|t], acc) do
     {f,s} = h
     flatten t, [f|[s|acc]]
+  end
+
+  defp to_map(fields) do
+    to_map fields, %{}
+  end
+  defp to_map([], acc) do; acc; end
+  defp to_map([k,v|rest], acc) do
+    to_map rest, Map.put(acc, k, v)
   end
 end
 
