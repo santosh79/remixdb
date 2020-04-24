@@ -3,8 +3,9 @@ defmodule RemixdbTest do
     use ExUnit.Case
 
     setup_all _context do
-      Remixdb.Server.start
+      Remixdb.Server.start_link
       client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+      :timer.sleep 1_000
       {:ok, %{client: client}}
     end
 
