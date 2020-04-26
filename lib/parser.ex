@@ -1,32 +1,29 @@
 defmodule Remixdb.Parser do
   use GenServer
-  def start_link(socket, client) do
-    GenServer.start_link __MODULE__, {:ok, socket, client}, []
+  def start_link(socket) do
+    GenServer.start_link __MODULE__, {:ok, socket}, []
   end
 
-  def init({:ok, socket, client}) do
-    send self(), :loop
-    {:ok, [socket, client]}
+  def init({:ok, socket}) do
+    {:ok, socket}
   end
 
-  def handle_info(:loop, [socket, client] = state) do
+  def read_command(pid) do
+    GenServer.call pid, :read_command
+  end
+
+  def handle_call(:read_command, _from, socket = state) do
     response = case read_new_command(socket) do
       {:error, reason} ->
         IO.puts "Remixdb.Parser bad request ---"
         IO.inspect reason
         IO.puts "---\n\n"
-        nil
+        {:error, reason}
       {:ok, [cmd|args]} ->
-        parse_command(cmd, args)
+        res = parse_command(cmd, args)
+        {:ok, res}
     end
-    case response do
-      nil ->
-        {:stop, :normal}
-      _ ->
-        GenServer.cast client, response
-        send self(), :loop
-        {:noreply, state}
-    end
+    {:reply, response, state}
   end
   def handle_info(_, state), do: {:noreply, state}
 
