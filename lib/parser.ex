@@ -10,70 +10,19 @@ defmodule Remixdb.Parser do
   end
 
   def handle_info(:loop, [socket, client] = state) do
-    case read_new_command(socket) do
+    response = case read_new_command(socket) do
       {:error, reason} ->
-        IO.puts "parser bad request #{inspect reason}"
+        IO.puts "Remixdb.Parser bad request ---"
+        IO.inspect reason
+        IO.puts "---\n\n"
+        nil
       {:ok, [cmd|args]} ->
-        response = case (cmd |> String.upcase) do
-          "SET"         -> {:set, args}
-          "APPEND"      -> {:append, args}
-          "GET"         -> {:get, args}
-          "GETSET"      -> {:getset, args}
-          "EXISTS"      -> {:exists, args}
-          "DBSIZE"      -> :dbsize
-          "FLUSHALL"    -> :flushall
-          "PING"        -> {:ping, args}
-          "INCR"        -> {:incr, args}
-          "DECR"        -> {:decr, args}
-          "DECRBY"      -> {:decrby, args}
-          "INCRBY"      -> {:incrby, args}
-          "SETEX"       -> {:setex, args}
-          "TTL"         -> {:ttl, args}
-          "RENAME"      -> {:rename, args}
-          "RENAMENX"    -> {:renamenx, args}
-          "RPUSH"       -> {:rpush, args}
-          "RPUSHX"      -> {:rpushx, args}
-          "LPUSH"       -> {:lpush, args}
-          "LPUSHX"      -> {:lpushx, args}
-          "LPOP"        -> {:lpop, args}
-          "RPOP"        -> {:rpop, args}
-          "LLEN"        -> {:llen, args}
-          "LRANGE"      -> {:lrange, args}
-          "LTRIM"       -> {:ltrim, args}
-          "LSET"        -> {:lset, args}
-          "LINDEX"      -> {:lindex, args}
-          "RPOPLPUSH"   -> {:rpoplpush, args}
-          "SADD"        -> {:sadd, args}
-          "SREM"        -> {:srem, args}
-          "SMEMBERS"    -> {:smembers, args}
-          "SISMEMBER"   -> {:sismember, args}
-          "SCARD"       -> {:scard, args}
-          "SUNION"      -> {:sunion, args}
-          "SDIFF"       -> {:sdiff, args}
-          "SINTER"      -> {:sinter, args}
-          "SRANDMEMBER" -> {:srandmember, args}
-          "SPOP"        -> {:spop, args}
-          "SMOVE"       -> {:smove, args}
-          "SDIFFSTORE"  -> {:sdiffstore, args}
-          "SUNIONSTORE" -> {:sunionstore, args}
-          "SINTERSTORE" -> {:sinterstore, args}
-          "HSET"        -> {:hset, args}
-          "HMSET"       -> {:hmset, args}
-          "HSETNX"      -> {:hsetnx, args}
-          "HMGET"       -> {:hmget, args}
-          "HLEN"        -> {:hlen, args}
-          "HGET"        -> {:hget, args}
-          "HGETALL"     -> {:hgetall, args}
-          "HDEL"        -> {:hdel, args}
-          "HKEYS"       -> {:hkeys, args}
-          "HVALS"       -> {:hvals, args}
-          "HEXISTS"     -> {:hexists, args}
-          "HSTRLEN"     -> {:hstrlen, args}
-          "HINCRBY"     -> {:hincrby, args}
-          cmd ->
-            IO.puts "Parser: unknown command: #{inspect cmd}"
-            nil
-        end
+        parse_command(cmd, args)
+    end
+    case response do
+      nil ->
+        {:stop, :normal}
+      _ ->
         GenServer.cast client, response
         send self(), :loop
         {:noreply, state}
@@ -168,6 +117,66 @@ defmodule Remixdb.Parser do
       {:error, reason} ->
         IO.puts "error with connection: #{reason}"
         {:error, reason}
+    end
+  end
+
+  defp parse_command(cmd, args) do
+    case (cmd |> String.upcase) do
+      "SET"         -> {:set, args}
+      "APPEND"      -> {:append, args}
+      "GET"         -> {:get, args}
+      "GETSET"      -> {:getset, args}
+      "EXISTS"      -> {:exists, args}
+      "DBSIZE"      -> :dbsize
+      "FLUSHALL"    -> :flushall
+      "PING"        -> {:ping, args}
+      "INCR"        -> {:incr, args}
+      "DECR"        -> {:decr, args}
+      "DECRBY"      -> {:decrby, args}
+      "INCRBY"      -> {:incrby, args}
+      "SETEX"       -> {:setex, args}
+      "TTL"         -> {:ttl, args}
+      "RENAME"      -> {:rename, args}
+      "RENAMENX"    -> {:renamenx, args}
+      "RPUSH"       -> {:rpush, args}
+      "RPUSHX"      -> {:rpushx, args}
+      "LPUSH"       -> {:lpush, args}
+      "LPUSHX"      -> {:lpushx, args}
+      "LPOP"        -> {:lpop, args}
+      "RPOP"        -> {:rpop, args}
+      "LLEN"        -> {:llen, args}
+      "LRANGE"      -> {:lrange, args}
+      "LTRIM"       -> {:ltrim, args}
+      "LSET"        -> {:lset, args}
+      "LINDEX"      -> {:lindex, args}
+      "RPOPLPUSH"   -> {:rpoplpush, args}
+      "SADD"        -> {:sadd, args}
+      "SREM"        -> {:srem, args}
+      "SMEMBERS"    -> {:smembers, args}
+      "SISMEMBER"   -> {:sismember, args}
+      "SCARD"       -> {:scard, args}
+      "SUNION"      -> {:sunion, args}
+      "SDIFF"       -> {:sdiff, args}
+      "SINTER"      -> {:sinter, args}
+      "SRANDMEMBER" -> {:srandmember, args}
+      "SPOP"        -> {:spop, args}
+      "SMOVE"       -> {:smove, args}
+      "SDIFFSTORE"  -> {:sdiffstore, args}
+      "SUNIONSTORE" -> {:sunionstore, args}
+      "SINTERSTORE" -> {:sinterstore, args}
+      "HSET"        -> {:hset, args}
+      "HMSET"       -> {:hmset, args}
+      "HSETNX"      -> {:hsetnx, args}
+      "HMGET"       -> {:hmget, args}
+      "HLEN"        -> {:hlen, args}
+      "HGET"        -> {:hget, args}
+      "HGETALL"     -> {:hgetall, args}
+      "HDEL"        -> {:hdel, args}
+      "HKEYS"       -> {:hkeys, args}
+      "HVALS"       -> {:hvals, args}
+      "HEXISTS"     -> {:hexists, args}
+      "HSTRLEN"     -> {:hstrlen, args}
+      "HINCRBY"     -> {:hincrby, args}
     end
   end
 end
