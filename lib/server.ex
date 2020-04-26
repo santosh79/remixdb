@@ -16,7 +16,7 @@ defmodule Remixdb.Server do
     {:ok, nil}
   end
 
-  def handle_info(:long_init, state) do
+  def handle_info(:long_init, _state) do
     IO.puts "\n\n --- started remixdb.server at -- "
     IO.inspect self()
     IO.puts "\n\n"

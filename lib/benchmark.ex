@@ -4,17 +4,25 @@ defmodule Remixdb.Benchmark do
     :timer.sleep 1_000
 
     set_time = :timer.tc(fn ->
-      1..num_elms |> Enum.each(fn(x) ->
-        client |> Exredis.query(["SET", "FOO-#{x}", "BARNED-#{x}"])
+      1..num_elms
+      |> Enum.map(fn(x) ->
+        Task.async(fn ->
+          client |> Exredis.query(["SET", "FOO-#{x}", "BARNED-#{x}"])
+        end)
       end)
+      |> Enum.each(&Task.await/1)
     end)
 
     get_time = :timer.tc(fn ->
-      1..num_elms |> Enum.each(fn(x) ->
-        "a" = "a"
-        val = "BARNED-#{x}"
-        ^val = Exredis.query(client, ["GET", "FOO-#{x}"])
+      1..num_elms
+      |> Enum.map(fn(x) ->
+        Task.async(fn ->
+          "a" = "a"
+          val = "BARNED-#{x}"
+          ^val = Exredis.query(client, ["GET", "FOO-#{x}"])
+        end)
       end)
+      |> Enum.each(&Task.await/1)
     end)
 
     %{:set_time => set_time, :get_time => get_time}
