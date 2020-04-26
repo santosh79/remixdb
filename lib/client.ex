@@ -24,7 +24,9 @@ defmodule Remixdb.Client do
 
   def handle_info(:read_socket, %State{socket: socket, parser: parser} = state) do
     case Remixdb.Parser.read_command(parser) do
-      {:error, _reason} -> :noop
+      {:error, _reason} ->
+        Process.send_after(self(), :exit, :timer.seconds(1))
+        {:noreply, state}
       {:ok, msg} ->
         response = get_response(msg)
         socket |> send_response(response)

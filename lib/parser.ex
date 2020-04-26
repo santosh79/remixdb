@@ -45,7 +45,9 @@ defmodule Remixdb.Parser do
   defp read_args(socket, num, accum) do
     case read_bytes(socket) do
       {:ok, num_bytes} ->
-        case read_data(socket, num_bytes) do
+        # + 2 for CRLF
+        case read_data(socket, num_bytes + 2) do
+          {:error, reason} -> {:error, reason}
           {:ok, data} ->
             msg = data |> String.replace(~r/(.+)\r\n$/, "\\1")
             read_args socket, (num - 1), (accum ++ [msg])
@@ -54,16 +56,17 @@ defmodule Remixdb.Parser do
   end
 
   defp read_data(socket, num_bytes) do
-    val = read_line socket
-    case val do
+    read_data socket, num_bytes, []
+  end
+  defp read_data(_socket, 0, result) do
+    final_result = result |> :lists.reverse |> List.to_string
+    {:ok, final_result}
+  end
+  defp read_data(socket, num_bytes, result) do
+    case :gen_tcp.recv(socket, 1) do
       {:error, reason} -> {:error, reason}
-      {:ok, data} ->
-        msg = data |> String.replace(~r/(.+)\r\n/, "\\1")
-        case String.length(msg) do
-          ^num_bytes ->
-            {:ok, msg}
-          _ -> {:error, msg}
-        end
+      {:ok, byte} ->
+        read_data(socket, num_bytes - 1, [byte|result])
     end
   end
 

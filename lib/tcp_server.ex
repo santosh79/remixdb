@@ -2,7 +2,7 @@ defmodule Remixdb.TcpServer do
 
   def start do
     port = 6379
-    {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true])
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true, backlog: 1_000])
     IO.puts "Accepting connections on port: #{port}"
     accept_loop socket
   end
