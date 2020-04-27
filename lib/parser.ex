@@ -56,9 +56,21 @@ defmodule Remixdb.Parser do
   end
 
   defp read_data(socket, num_bytes) do
+    read_data socket, num_bytes, []
+  end
+
+  defp read_data(socket, num_bytes, acc) do
     case :gen_tcp.recv(socket, num_bytes) do
       {:error, reason} -> {:error, reason}
-      {:ok, result} -> {:ok, result}
+      {:ok, result} ->
+        bytes_read = byte_size(result) 
+        case bytes_read < num_bytes do
+          true ->
+            read_data(socket, (num_bytes - bytes_read), [result|acc])
+          _ ->
+            fr = [result|acc] |> :lists.reverse |> List.to_string
+            {:ok, fr}
+        end
     end
   end
 
