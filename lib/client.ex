@@ -17,7 +17,7 @@ defmodule Remixdb.Client do
   end
 
   def handle_info(:real_init, socket) do
-    {:ok, parser} = Remixdb.Parser.start_link(socket)
+    {:ok, parser} = Remixdb.Parsers.RedisParser.start_link(socket)
     send self(), :read_socket
     {:noreply, %State{socket: socket, parser: parser}}
   end
