@@ -21,19 +21,28 @@ defmodule Remixdb.Server do
     IO.inspect self()
     IO.puts "\n\n"
 
+    tcp_pid = start_tcp_server()
+    key_handler_pid = start_key_handler()
+
+    {:noreply, %State{tcp_server_pid: tcp_pid, key_handler_pid: key_handler_pid}}
+  end
+
+  defp start_key_handler() do
+    kp = Remixdb.KeyHandler.start_link
+    IO.puts "\n\n --- started Remixdb.KeyHandler at -- "
+    IO.inspect kp
+    IO.puts "\n\n"
+    kp
+  end
+
+  defp start_tcp_server() do
     tcp_pid = spawn_link(Remixdb.TcpServer, :start, [])
     IO.puts "\n\n --- started Remixdb.TcpServer at -- "
     IO.inspect tcp_pid
     IO.puts "\n\n"
 
     Process.register tcp_pid, :remixdb_tcp_server
-
-    kp = Remixdb.KeyHandler.start_link
-    IO.puts "\n\n --- started Remixdb.KeyHandler at -- "
-    IO.inspect kp
-    IO.puts "\n\n"
-
-    {:noreply, %State{tcp_server_pid: tcp_pid, key_handler_pid: kp}}
+    tcp_pid
   end
 
 end
