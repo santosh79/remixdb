@@ -4,10 +4,10 @@ defmodule Remixdb.Server do
   @name :remixdb_server
 
   defmodule State do
-    defstruct tcp_server_pid: nil, key_handler_pid: nil
+    defstruct tcp_server_pid: nil
   end
 
-  def start_link do
+  def start_link(_args) do
     GenServer.start_link __MODULE__, :ok, name: @name
   end
 
@@ -22,17 +22,8 @@ defmodule Remixdb.Server do
     IO.puts "\n\n"
 
     tcp_pid = start_tcp_server()
-    key_handler_pid = start_key_handler()
 
-    {:noreply, %State{tcp_server_pid: tcp_pid, key_handler_pid: key_handler_pid}}
-  end
-
-  defp start_key_handler() do
-    kp = Remixdb.KeyHandler.start_link
-    IO.puts "\n\n --- started Remixdb.KeyHandler at -- "
-    IO.inspect kp
-    IO.puts "\n\n"
-    kp
+    {:noreply, %State{tcp_server_pid: tcp_pid}}
   end
 
   defp start_tcp_server() do
