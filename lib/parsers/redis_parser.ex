@@ -15,9 +15,7 @@ defmodule Remixdb.Parsers.RedisParser do
   def handle_call(:read_command, _from, socket = state) do
     response = case read_new_command(socket) do
       {:error, reason} ->
-        IO.puts "Remixdb.Parsers.RedisParser bad request ---"
-        IO.inspect reason
-        IO.puts "---\n\n"
+        :io.format("Remixdb.Parsers.RedisParser bad request --- reason: ~p --- ~n", [reason])
         {:error, reason}
       {:ok, [cmd|args]} ->
         res = parse_command(cmd, args)
@@ -119,7 +117,7 @@ defmodule Remixdb.Parsers.RedisParser do
           String.replace(~r/\*(\d+)\r\n/,"\\1") |> Integer.parse
         {:ok, num_args}
       {:error, reason} ->
-        IO.puts "error with connection: #{reason}"
+        :io.format("error with connection, reason: -- ~p ~n", [reason])
         {:error, reason}
     end
   end
