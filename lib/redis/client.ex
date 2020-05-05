@@ -1,5 +1,5 @@
 import Remixdb.KeyHandler, only: [flushall: 0, dbsize: 0, get_pid: 2, get_or_create_pid: 2, exists?: 1, rename_key: 2, renamenx_key: 2]
-import Remixdb.ResponseHandler, only: [send_response: 2]
+import Remixdb.Redis.ResponseHandler, only: [send_response: 2]
 
 defmodule Remixdb.RedisClient do
   use GenServer

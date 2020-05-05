@@ -1,4 +1,4 @@
-defmodule Remixdb.ResponseHandler do
+defmodule Remixdb.Redis.ResponseHandler do
   def send_response(socket, nil) do
     :gen_tcp.send socket, "$-1\r\n"
     socket
@@ -30,9 +30,8 @@ defmodule Remixdb.ResponseHandler do
   def send_response(socket, val) when is_list(val) do
     header = "*" <> (val |> Enum.count |> Integer.to_string) <> "\r\n"
     :gen_tcp.send socket, header
-    val |> Enum.each(fn(el) ->
-      Remixdb.ResponseHandler.send_response(socket, el)
-    end)
+
+    Enum.each(val, fn(el) -> send_response(socket, el) end)
     socket
   end
 
