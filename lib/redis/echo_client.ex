@@ -1,3 +1,5 @@
+import Remixdb.Redis.ResponseHandler, only: [send_ok: 1]
+
 defmodule Remixdb.RedisEchoClient do
   use GenServer
   def start_link(socket) do
@@ -21,7 +23,7 @@ defmodule Remixdb.RedisEchoClient do
 
   def handle_info(:read_socket, %State{socket: socket, parser: parser} = state) do
     {:ok, _msg} = Remixdb.Parser.read_command(parser)
-    socket |> Remixdb.Redis.ResponseHandler.send_ok
+    socket |>  send_ok
     send self(), :read_socket
     {:noreply, state}
   end
