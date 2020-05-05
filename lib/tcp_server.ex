@@ -10,7 +10,7 @@ defmodule Remixdb.TcpServer do
   defp accept_loop(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
     spawn(fn ->
-      Remixdb.Client.start_link client
+      Remixdb.RedisClient.start_link client
     end)
     accept_loop socket
   end
