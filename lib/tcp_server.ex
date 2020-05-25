@@ -8,11 +8,12 @@ defmodule Remixdb.TcpServer do
 
   def handle_info(_, state), do: {:noreply, state}
   defp accept_loop(socket) do
-    {:ok, client_sock} = :gen_tcp.accept(socket)
     client_mod = case Application.get_env(:remixdb, :client) do
       nil -> Remixdb.RedisClient
       mod -> mod
     end
+    :io.format("~n~n Remixdb.TcpServer client_mod: ~p ~n~n", [client_mod])
+    {:ok, client_sock} = :gen_tcp.accept(socket)
     spawn_link(client_mod, :start_link, [client_sock])
     accept_loop socket
   end
