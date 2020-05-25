@@ -9,7 +9,7 @@ defmodule Remixdb.Parsers.RedisParser do
   end
 
   def read_command(pid) do
-    GenServer.call pid, :read_command
+    GenServer.call pid, :read_command, :infinity
   end
 
   def handle_call(:read_command, _from, socket = state) do
