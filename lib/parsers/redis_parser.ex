@@ -35,7 +35,9 @@ defmodule Remixdb.Parsers.RedisParser do
   defp read_args(socket, num, accum) do
     {:ok, num_bytes} = read_bytes(socket)
     {:ok, data} = read_line socket
-    msg = data |> :erlang.binary_to_list |> Enum.slice(0..-3) |> :erlang.list_to_binary
+
+    msg = data |> :binary.part(0, :erlang.byte_size(data) - 2)
+
     read_args socket, (num - 1), (accum ++ [msg])
   end
 
@@ -64,7 +66,8 @@ defmodule Remixdb.Parsers.RedisParser do
   everything else to an int.
   """
   defp line_to_int(data) do
-    dd = data |> :erlang.binary_to_list |> Enum.slice(1..-3) |> :erlang.list_to_integer
+    data |> :binary.part(1, :erlang.byte_size(data) - 3)
+    |> :erlang.binary_to_list |> :erlang.list_to_integer
   end
 
   defp parse_command(cmd, args) do
