@@ -66,8 +66,7 @@ defmodule Remixdb.Parsers.RedisParser do
   everything else to an int.
   """
   defp line_to_int(data) do
-    data |> :binary.part(1, :erlang.byte_size(data) - 3)
-    |> :erlang.binary_to_list |> :erlang.list_to_integer
+    data |> :binary.part(1, :erlang.byte_size(data) - 3) |> :erlang.binary_to_integer
   end
 
   defp parse_command(cmd, args) do
