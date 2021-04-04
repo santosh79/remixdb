@@ -25,11 +25,5 @@ defmodule Remixdb.Benchmark.Parsers do
   def set_task(client, k, v) do
     "OK" = client |> Exredis.query(["SET", k, v])
   end
-
-  def set_task_old(client, keys_and_vals) do
-    keys_and_vals |> Enum.each(fn({k, v}) ->
-      "OK" = client |> Exredis.query(["SET", k, v])
-    end)
-  end
 end
 
