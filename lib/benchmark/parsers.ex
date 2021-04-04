@@ -7,14 +7,29 @@ defmodule Remixdb.Benchmark.Parsers do
                     |> Enum.map(&( {"key: #{&1}", "val: #{&1}"} ))
 
     result = :timer.tc(fn ->
-      keys_and_vals |> Enum.each(fn({k, v}) ->
-        "OK" = client |> Exredis.query(["SET", k, v])
+      t_ids = keys_and_vals |> Enum.map(fn({k, v}) ->
+        Task.async __MODULE__, :set_task, [client, k, v]
+      end)
+
+      t_ids |> Enum.each(fn(t_id) ->
+        Task.await t_id
       end)
     end)
     :ok = client |> Exredis.stop()
     :io.format("~n~n ~p with result: ~p ~n~n", [__MODULE__, result])
     :timer.sleep(:timer.seconds(2))
     Process.exit(self(), :kill)
+  end
+
+
+  def set_task(client, k, v) do
+    "OK" = client |> Exredis.query(["SET", k, v])
+  end
+
+  def set_task_old(client, keys_and_vals) do
+    keys_and_vals |> Enum.each(fn({k, v}) ->
+      "OK" = client |> Exredis.query(["SET", k, v])
+    end)
   end
 end
 
