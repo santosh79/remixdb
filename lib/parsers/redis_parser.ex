@@ -34,52 +34,20 @@ defmodule Remixdb.Parsers.RedisParser do
 
   defp read_args(socket, num, accum) do
     {:ok, num_bytes} = read_bytes(socket)
-    {:ok, data} = read_data(socket, num_bytes + 2)
-    msg = data |> String.replace(~r/(.+)\r\n$/, "\\1")
+    {:ok, data} = read_line socket
+    msg = data |> :erlang.binary_to_list |> Enum.slice(0..-3) |> :erlang.list_to_binary
     read_args socket, (num - 1), (accum ++ [msg])
-  end
-
-  defp read_data(socket, num_bytes) do
-    read_data socket, num_bytes, []
-  end
-
-  defp read_data(socket, num_bytes, acc) do
-    {:ok, result} = :gen_tcp.recv(socket, num_bytes)
-    bytes_read = byte_size(result) 
-    case bytes_read < num_bytes do
-      true ->
-        read_data(socket, (num_bytes - bytes_read), [result|acc])
-      _ ->
-        fr = [result|acc] |> :lists.reverse |> List.to_string
-        {:ok, fr}
-    end
   end
 
   defp read_bytes(socket) do
     {:ok, data}  = read_line socket
-    {num_bytes, ""} = data |> String.replace(~r/\$(\d+)\r\n/, "\\1") |> Integer.parse
-    {:ok, num_bytes}
+    dd = data |> line_to_int
+    {:ok, dd}
   end
 
 
   defp read_line(socket) do
-    read_line(socket, nil, [])
-  end
-
-  defp read_line(socket, prev_val, result) do
-    {:ok, byte} = :gen_tcp.recv(socket, 1)
-    case byte do
-      "\n" ->
-        case prev_val do
-          "\r" ->
-            final_result = [byte|result] |> :lists.reverse |> List.to_string
-            {:ok, final_result}
-          _ ->
-            read_line(socket, byte, [byte|result])
-        end
-      _ ->
-        read_line(socket, byte, [byte|result])
-    end
+    :gen_tcp.recv(socket, 0)
   end
 
   @doc """
@@ -87,9 +55,16 @@ defmodule Remixdb.Parsers.RedisParser do
   """
   def read_number_args(socket) do
     {:ok, data} = read_line(socket)
-    {num_args, ""} = data |>
-    String.replace(~r/\*(\d+)\r\n/,"\\1") |> Integer.parse
+    num_args = data |> line_to_int
     {:ok, num_args}
+  end
+
+  @doc """
+  Parses a <<binary>> by removing the first byte and the last two bytes and converting 
+  everything else to an int.
+  """
+  defp line_to_int(data) do
+    dd = data |> :erlang.binary_to_list |> Enum.slice(1..-3) |> :erlang.list_to_integer
   end
 
   defp parse_command(cmd, args) do
