@@ -33,7 +33,7 @@ defmodule Remixdb.Parsers.RedisParser do
   end
 
   defp read_args(socket, num, accum) do
-    {:ok, num_bytes} = read_bytes(socket)
+    {:ok, _num_bytes} = read_bytes(socket)
     {:ok, data} = read_line socket
 
     msg = data |> :binary.part(0, :erlang.byte_size(data) - 2)
@@ -61,10 +61,6 @@ defmodule Remixdb.Parsers.RedisParser do
     {:ok, num_args}
   end
 
-  @doc """
-  Parses a <<binary>> by removing the first byte and the last two bytes and converting 
-  everything else to an int.
-  """
   defp line_to_int(data) do
     data |> :binary.part(1, :erlang.byte_size(data) - 3) |> :erlang.binary_to_integer
   end
