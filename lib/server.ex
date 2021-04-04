@@ -24,8 +24,16 @@ defmodule Remixdb.Server do
   end
 
   defp start_tcp_server() do
+    # The Client connection that will handle the long running
+    # request
+    client_mod = case Application.get_env(:remixdb, :client) do
+      nil -> Remixdb.RedisClient
+      mod -> mod
+    end
+    :io.format("~n~n Remixdb.TcpServer client_mod: ~p ~n~n", [client_mod])
+
     port = Application.get_env(:remixdb, :port)
-    tcp_pid = spawn_link(Remixdb.TcpServer, :start, [port])
+    tcp_pid = spawn_link(Remixdb.TcpServer, :start, [port, client_mod])
     :io.format("~n~n -- started Remixdb.TcpServer at -- ~p ~n~n", [port])
 
     Process.register tcp_pid, :remixdb_tcp_server
