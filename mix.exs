@@ -3,11 +3,12 @@ defmodule Remixdb.Mixfile do
 
   def project do
     [app: :remixdb,
-     version: "0.0.2",
-     elixir: "~> 1.5",
+     version: "0.0.3",
+     elixir: "~> 1.11",
      description: "A caching library written in pure elixir",
      start_permanent: Mix.env == :prod,
-     deps: deps()]
+     deps: deps()
+    ]
   end
 
   # Configuration for the OTP application
@@ -16,7 +17,6 @@ defmodule Remixdb.Mixfile do
   def application do
     [
       extra_applications: [:logger],
-      # env: [port: 6379, client: Remixdb.RedisEchoClient],
       env: [port: 6379],
       mod: {Remixdb, []}
     ]
