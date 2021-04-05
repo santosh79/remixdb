@@ -66,7 +66,9 @@ defmodule Remixdb.Parsers.RedisParser do
   end
 
   defp parse_command(cmd, args) do
+    :io.format("~n~n parse_command, cmd ~p, args ~p ~n~n", [cmd, args])
     case (cmd |> String.upcase) do
+      "CONFIG"      -> {:config, args}
       "SET"         -> {:set, args}
       "APPEND"      -> {:append, args}
       "GET"         -> {:get, args}
