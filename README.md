@@ -24,7 +24,7 @@ You don't need any drivers - **this should work with your redis drivers**.
 
 
 ## Why do this?
-Simple, scalability. What do I mean by this? The idea that you can grow your cluster in real time, without a shutdown on a rock-solid VM is extremely appealing to me. I am **not** trying to compete with Redis or Memcached in terms of performance. Instead, what I am trying to do is offer an alternative where you can scale your NoSQL DB pretty much how to the limits.
+We need Databases that are fault-tolerant, highly available and that can scale and take FULL advantage of the latest in Hardware specs (more cores). The Erlang VM is **uniquely positioned** to do this and this Database is an effort to prove it! :)
 
 ## Status
 This library is still being worked on, so it does NOT support all of redis' commands -- that being said, the plan is to get it to full compliance with Redis' single server commands, ASAP. Redis Cluster is something I do not believe in - since I do not understand the Availability Guarantees it provides.
