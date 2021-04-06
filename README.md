@@ -6,7 +6,7 @@ Remixdb
 RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM. It aims for all of the concurrency benefits of running on the Erlang VM without sacrificing on the Availability of Redis, i.e. it aims to match Redis in terms of performance while giving all of the concurrency benefits of Erlang.
 
 ## How fast is this?
-Running on my Early 2021 M1 Macbook Air with 16G of memory, here is my `redis-benchmark`:
+It's Fast! Pretty close to **matching redis** in terms of performance. Running on my Early 2021 M1 Macbook Air with 16G of memory, here is my `redis-benchmark`:
 
 ```
 redis-benchmark -t set -n 100000 -r 100000000
