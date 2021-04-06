@@ -10,7 +10,7 @@ Docker is the preferred way to run this:
 
 ```
 docker pull santoshdocker2021/remixdb:latest
-docker container -d --rm -9 6379:6379 santoshdocker2021/remixdb:latest
+docker container run -d --rm -p 6379:6379 santoshdocker2021/remixdb:latest
 ```
 
 NO docker, then:
