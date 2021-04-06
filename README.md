@@ -9,7 +9,6 @@ RemixDB is a distributed NoSQL database, that implements the [Redis](http://redi
 Docker is the preferred way to run this:
 
 ```
-docker pull santoshdocker2021/remixdb:latest
 docker container run -d --rm -p 6379:6379 santoshdocker2021/remixdb:latest
 ```
 
