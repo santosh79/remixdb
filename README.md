@@ -2,8 +2,8 @@ Remixdb
 =======
 [![Build Status](https://travis-ci.org/santosh79/remixdb.svg?branch=master)](https://travis-ci.org/santosh79/remixdb)
 
-## A fully distributed NoSQL database, built on the Redis protocol
-RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM. It aims for all of the concurrency benefits of running on the Erlang VM without sacrificing on the Availability of Redis, i.e. it aims to match Redis in terms of performance while giving all of the concurrency benefits of Erlang.
+## A NoSQL database focussed on Concurrency, built to support the Redis protocol
+RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM. It aims for matching all of the performance of Redis while leveraging all of the good Systems Tooling of the BEAM VM - High Availability and High Throughput.
 
 ## How fast is this?
 It's Fast! Pretty close to **matching redis** in terms of performance. Running on my Early 2021 M1 Macbook Air with 16G of memory, here is my `redis-benchmark`:
