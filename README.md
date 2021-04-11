@@ -9,19 +9,30 @@ RemixDB is a distributed NoSQL database, that implements the [Redis](http://redi
 It's Fast! Pretty close to **matching redis** in terms of performance. Running on my Early 2021 M1 Macbook Air with 16G of memory, here is my `redis-benchmark`:
 
 ```
-redis-benchmark -t set -n 100000 -r 100000000
-====== SET ======
-  100000 requests completed in 2.43 seconds
+redis-benchmark -t get -n 100000 -r 100000000
+====== GET ======
+  100000 requests completed in 1.25 seconds
   50 parallel clients
   3 bytes payload
   keep alive: 1
 
-15.18% <= 1 milliseconds
-99.58% <= 2 milliseconds
-99.91% <= 3 milliseconds
-100.00% <= 4 milliseconds
-100.00% <= 4 milliseconds
-41135.34 requests per second
+96.57% <= 1 milliseconds
+99.29% <= 2 milliseconds
+99.68% <= 3 milliseconds
+99.81% <= 4 milliseconds
+99.91% <= 5 milliseconds
+99.93% <= 6 milliseconds
+99.96% <= 7 milliseconds
+99.97% <= 8 milliseconds
+99.98% <= 9 milliseconds
+99.98% <= 10 milliseconds
+99.98% <= 11 milliseconds
+99.99% <= 12 milliseconds
+99.99% <= 13 milliseconds
+100.00% <= 14 milliseconds
+100.00% <= 15 milliseconds
+100.00% <= 18 milliseconds
+80192.46 requests per second
 ```
 
 ## How do I play with this?
