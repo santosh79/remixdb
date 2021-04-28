@@ -8,7 +8,7 @@ RemixDB is a distributed NoSQL database, that implements the [Redis](http://redi
 ## How fast is this?
 It's Fast! Pretty close to **matching redis** in terms of performance.
 
-Here are some results of running the `experimental` branch on a early 2021 M1 Macbook Air:
+Here are some results of running `redis-benchmark` on an early 2021 M1 Macbook Air:
 
 ```
 redis-benchmark -t get -n 100000 -r 100000000
