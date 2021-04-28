@@ -94,7 +94,7 @@ defmodule Remixdb.SimpleList do
     {:reply, val, new_state}
   end
 
-  def handle_call(:flushall, _from, state) do
+  def handle_call(:flushall, _from, _state) do
     {:reply, :ok, Map.new}
   end
 
@@ -103,7 +103,7 @@ defmodule Remixdb.SimpleList do
     {:reply, sz, Map.new}
   end
 
-  def handle_call({:lset, list_name, idx, val} = args, _from, state) do
+  def handle_call({:lset, list_name, idx, val}, _from, state) do
     res = Map.get(state, list_name, [])
     |> update_at(idx, val)
 
@@ -121,7 +121,7 @@ defmodule Remixdb.SimpleList do
     {:reply, item, state}
   end
   
-  def handle_call({:ltrim, list_name, start, stop} = args, _from, state)
+  def handle_call({:ltrim, list_name, start, stop}, _from, state)
   when is_integer(start) and is_integer(stop) do
 
     updated_list = Map.get(state, list_name, []) |>
@@ -131,7 +131,7 @@ defmodule Remixdb.SimpleList do
     {:reply, :ok, Map.put(state, list_name, updated_list)}
   end
 
-  def handle_call({:lrange, list_name, start, stop} = args, _from, state)
+  def handle_call({:lrange, list_name, start, stop}, _from, state)
   when is_integer(start) and is_integer(stop) do
     res = Map.get(state, list_name, []) |>
       get_items_in_range(start, stop)
@@ -188,7 +188,7 @@ defmodule Remixdb.SimpleList do
     {:reply, val, new_state}
   end
 
-  defp concat_items_x([], items, direction) do
+  defp concat_items_x([], _items, _direction) do
     []
   end
   defp concat_items_x(list, items, direction) do
@@ -212,7 +212,7 @@ defmodule Remixdb.SimpleList do
     {List.last(list), Enum.drop(list, -1)}
   end
 
-  defp get_items_in_range([], start, stop) do
+  defp get_items_in_range([], _start, _stop) do
     []
   end
 

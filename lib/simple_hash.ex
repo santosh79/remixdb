@@ -187,7 +187,7 @@ defmodule Remixdb.SimpleHash do
                            new_map = old_map |> Map.put(key, val)
                            new_state = Map.put(state, hash_name, new_map)
                            {1, new_state}
-                         old_val ->
+                         _ ->
                            {0, state}
                        end
     {:reply, res, new_state}

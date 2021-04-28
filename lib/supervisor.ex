@@ -13,8 +13,7 @@ defmodule Remixdb.Supervisor do
       Remixdb.SimpleString,
       Remixdb.SimpleHash,
       Remixdb.SimpleSet,
-      Remixdb.SimpleList,
-      Remixdb.KeyHandler
+      Remixdb.SimpleList
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end

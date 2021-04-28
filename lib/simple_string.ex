@@ -59,7 +59,7 @@ defmodule Remixdb.SimpleString do
     GenServer.call @name, {:incrby, key, val * -1}
   end
 
-  def handle_call(:flushall, _from, state) do
+  def handle_call(:flushall, _from, _state) do
     {:reply, :ok, Map.new}
   end
 

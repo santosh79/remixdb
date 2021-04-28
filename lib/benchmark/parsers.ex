@@ -60,7 +60,7 @@ defmodule Remixdb.Benchmark.Parsers do
   end
 
   def get_task(client, k, v) do
-    v = client |> Exredis.query(["SET", k, v])
+    client |> Exredis.query(["SET", k, v])
   end
 end
 

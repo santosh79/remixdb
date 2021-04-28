@@ -3,7 +3,6 @@ alias Remixdb.SimpleList, as: RL
 alias Remixdb.SimpleSet, as: RST
 alias Remixdb.SimpleHash, as: RSH
 
-import Remixdb.KeyHandler, only: [get_pid: 2, get_or_create_pid: 2, rename_key: 2, renamenx_key: 2]
 import Remixdb.Redis.ResponseHandler, only: [send_response: 2]
 
 defmodule Remixdb.RedisConnection do
@@ -36,10 +35,6 @@ defmodule Remixdb.RedisConnection do
   end
 
   def handle_info(_, state), do: {:noreply, state}
-
-  defp perform_set_single_arg_cmd(key, func) do
-    func.(get_pid(:set, key))
-  end
 
   defp get_response(msg) do
     case msg do
@@ -76,11 +71,10 @@ defmodule Remixdb.RedisConnection do
         RSS.decr(key)
       {:decrby, [key, val]} ->
         RSS.decrby(key, val)
-      {:setex, [key, timeout, val]} ->
-        get_or_create_pid(:string, key) |>
-          Remixdb.String.setex(timeout, val)
-      {:ttl, [key]} ->
-        get_pid(:string, key) |> Remixdb.String.ttl
+      {:setex, [_key, _timeout, _val]} ->
+        raise "not implemented"
+      {:ttl, [_key]} ->
+        raise "not implemented"
       {:rename, [old_name, new_name]} ->
         res = datastructures() |>
           Enum.any?(fn(mod) ->
@@ -90,8 +84,8 @@ defmodule Remixdb.RedisConnection do
           true -> "OK"
           _ -> "ERR no such key"
         end
-      {:renamenx, [old_name, new_name]} ->
-        renamenx_key(old_name, new_name)
+      {:renamenx, [_old_name, _new_name]} ->
+        raise "not implemented!"
       {:rpushx, [name|items]} ->
         RL.rpushx(name, items)
       {:rpush, [name|items]} ->
@@ -184,16 +178,6 @@ defmodule Remixdb.RedisConnection do
 
   defp datastructures() do
     [RSS, RL, RST, RSH]
-  end
-
-  defp perform_set_multi_args_cmd(keys, func) do
-    func.(keys |> Enum.map(&(get_pid(:set, &1))))
-  end
-
-  defp perform_store_command(func, [dest|keys]) do
-    dest_pid = get_or_create_pid :set, dest
-    key_pids =  keys |> Enum.map(&(get_pid(:set, &1)))
-    func.(dest_pid, key_pids)
   end
 end
 
