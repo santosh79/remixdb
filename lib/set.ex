@@ -1,7 +1,7 @@
 defmodule Remixdb.Set do
   use GenServer
 
-  @name :remixdb_simple_set
+  @name :remixdb_set
 
   def start_link(_args) do
     GenServer.start_link __MODULE__, :ok, name: @name
