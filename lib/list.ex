@@ -1,191 +1,249 @@
 defmodule Remixdb.List do
   use GenServer
-  def start(key_name) do
-    GenServer.start_link __MODULE__, {:ok, key_name}, []
+
+  @name :remixdb_simple_list
+
+  def start_link(_args) do
+    GenServer.start_link __MODULE__, :ok, name: @name
   end
 
-  def init({:ok, key_name}) do
-    {:ok, %{items: [], key_name: key_name}}
+  def init(:ok) do
+    {:ok, Map.new}
   end
 
-  def rpush(name, items) do
-    GenServer.call(name, {:rpush, items})
+  def flushall() do
+    GenServer.call @name, :flushall
   end
 
-  def rpushx(nil, _items) do; 0; end
-  def rpushx(name, items) do
-    GenServer.call(name, {:rpushx, items})
+  def dbsize() do
+    GenServer.call @name, :dbsize
   end
 
-  def lpush(name, items) do
-    GenServer.call(name, {:lpush, items})
+  def llen(list_name) do
+    GenServer.call @name, {:llen, list_name}
   end
 
-  def lpushx(nil, _items) do; 0; end
-  def lpushx(name, items) do
-    GenServer.call(name, {:lpushx, items})
+  def lrange(list_name, start, stop) do
+    GenServer.call @name, {:lrange, list_name, start, stop}
   end
 
-  def lpop(nil) do; :undefined; end
-  def lpop(name) do
-    GenServer.call(name, :lpop)
+  def ltrim(list_name, start, stop) do
+    GenServer.call @name, {:ltrim, list_name, start, stop}
   end
 
-  def rpop(nil) do; :undefined; end
-  def rpop(name) do
-    GenServer.call(name, :rpop)
+  def lset(list_name, idx, val) when is_integer(idx) do
+    GenServer.call @name, {:lset, list_name, idx, val}
   end
 
-  def rpoplpush(nil, _) do; :undefined; end
+  def lindex(list_name, idx) when is_integer(idx) do
+    GenServer.call @name, {:lindex, list_name, idx}
+  end
+  def lindex(list_name, idx) do
+    {idx, ""} = Integer.parse idx
+    lindex list_name, idx
+  end
+
+  def rpush(list_name, items) do
+    GenServer.call @name, {:rpush, list_name, items}
+  end
+
+  def rpushx(list_name, items) do
+    GenServer.call @name, {:rpushx, list_name, items}
+  end
+
+  def lpush(list_name, items) do
+    GenServer.call @name, {:lpush, list_name, items}
+  end
+  def lpushx(list_name, items) do
+    GenServer.call @name, {:lpushx, list_name, items}
+  end
+
+  def lpop(list_name) do
+    GenServer.call @name, {:lpop, list_name}
+  end
+
+  def rpop(list_name) do
+    GenServer.call @name, {:rpop, list_name}
+  end
+
   def rpoplpush(src, dest) do
-    GenServer.call(dest, {:rpoplpush, src})
+    GenServer.call @name, {:rpoplpush, src, dest}
   end
 
-  def llen(nil) do; 0; end
-  def llen(name) do
-    GenServer.call(name, :llen)
+  def rename(old_name, new_name) do
+    GenServer.call @name, {:rename, old_name, new_name}
   end
 
-  def lrange(nil, _start, _stop) do; []; end
-  def lrange(name, start, stop) do
-    to_i = &String.to_integer/1
-    GenServer.call(name, {:lrange, to_i.(start), to_i.(stop)})
+  def handle_call({:rename, old_name, new_name}, _from, state) do
+    {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
+    {:reply, res, new_state}
   end
 
-  def ltrim(nil, _start, _stop) do; []; end
-  def ltrim(name, start, stop) do
-    to_i = &String.to_integer/1
-    GenServer.call(name, {:ltrim, to_i.(start), to_i.(stop)})
+  def handle_call({:rpoplpush, src, dest}, _from, state) do
+    src_list = state |> Map.get(src, [])
+    # SantoshTODO: Clean This Up
+    {val, new_state} = case Enum.count(src_list) do
+                         0 -> {nil, state}
+                         _ ->
+                           ll = List.last(src_list)
+                           dd = [ll|Map.get(state, dest, [])]
+                           rr = Map.put(state, src, Enum.drop(src_list, -1)) |>
+                             Map.put(dest, dd)
+                           {ll, rr}
+                       end
+    {:reply, val, new_state}
   end
 
-  def lindex(nil, _idx) do; :undefined; end
-  def lindex(name, idx) do
-    GenServer.call(name, {:lindex, String.to_integer(idx)})
+  def handle_call(:flushall, _from, _state) do
+    {:reply, :ok, Map.new}
   end
 
-  def lset(name, idx, val) do
-    GenServer.call(name, {:lset, String.to_integer(idx), val})
+  def handle_call(:dbsize, _from, state) do
+    sz = state |> Map.keys |> Enum.count
+    {:reply, sz, Map.new}
   end
 
-  def handle_info(_, state), do: {:noreply, state}
+  def handle_call({:lset, list_name, idx, val}, _from, state) do
+    res = Map.get(state, list_name, [])
+    |> update_at(idx, val)
 
-  def handle_call(:llen, _from, %{items: items} = state) do
-    list_sz = items |> Enum.count
-    {:reply, list_sz, state}
+    case res do
+      {:error, _} ->
+        {:reply, {:error, "ERR index out of range"}, state}
+      {:ok, ll} ->
+        {:reply, :ok, update_state(ll, list_name, state)}
+    end
   end
 
-  def handle_call({:rpush, new_items}, _from, state) do
-    add_items_to_list :right, new_items, state
-  end
-
-  def handle_call({:rpushx, new_items}, _from, state) do
-    add_items_to_list :right, new_items, state
-  end
-
-  def handle_call({:lpush, new_items}, _from, state) do
-    add_items_to_list :left, new_items, state
-  end
-
-  def handle_call({:lpushx, new_items}, _from, state) do
-    add_items_to_list :left, new_items, state
-  end
-
-  def handle_call(:lpop, _from, state) do
-    pop_items_from_list :left, state
-  end
-
-  def handle_call(:rpop, _from, state) do
-    pop_items_from_list :right, state
-  end
-
-  def handle_call({:rpoplpush, src}, _from, %{items: _items} = state) do
-    item = Remixdb.List.rpop src
-    {_, _, updated_state} = add_items_to_list :left, [item], state
-    {:reply, item, updated_state}
-  end
-
-  def handle_call({:lrange, start, stop}, _from, %{items: items} = state) do
-    items_in_range = get_items_in_range start, stop, items
-    {:reply, items_in_range, state}
-  end
-
-  def handle_call({:ltrim, start, stop}, _from, %{items: items} = state) do
-    items_in_range = get_items_in_range start, stop, items
-    new_state = update_state state, items_in_range
-    {:reply, :ok, new_state}
-  end
-
-  def handle_call({:lindex, idx}, _from, %{items: items} = state) do
-    item = get_items_in_range(idx, -1, items) |> List.first
+  def handle_call({:lindex, list_name, idx}, _from, state) do
+    item = Map.get(state, list_name)
+    |> Enum.at(idx)
     {:reply, item, state}
   end
+  
+  def handle_call({:ltrim, list_name, start, stop}, _from, state)
+  when is_integer(start) and is_integer(stop) do
 
-  def handle_call({:lset, idx, val}, _from, %{items: items} = state) do
-    length      = items |> Enum.count
-    invalid_idx = idx >= length
-    case invalid_idx do
-      true ->
-        {:reply, {:error, "ERR index out of range"}, state}
+    updated_list = Map.get(state, list_name, []) |>
+      get_items_in_range(start, stop)
+
+
+    {:reply, :ok, Map.put(state, list_name, updated_list)}
+  end
+
+  def handle_call({:lrange, list_name, start, stop}, _from, state)
+  when is_integer(start) and is_integer(stop) do
+    res = Map.get(state, list_name, []) |>
+      get_items_in_range(start, stop)
+    {:reply, res, state}
+  end
+
+
+  def handle_call({:llen, list_name}, _from, state) do
+    sz = Map.get(state, list_name, []) |> Enum.count
+    {:reply, sz, state}
+  end
+
+  def handle_call({:lpushx, list_name, new_items}, _from, state) do
+    new_list = Map.get(state, list_name, [])
+    |> concat_items_x(new_items, :left)
+
+    sz = new_list |> Enum.count
+    {:reply, sz, update_state(new_list, list_name, state)}
+  end
+
+  def handle_call({:lpush, list_name, new_items}, _from, state) do
+    new_list = Map.get(state, list_name, [])
+    |> concat_items(new_items, :left)
+
+    sz = new_list |> Enum.count
+    {:reply, sz, update_state(new_list, list_name, state)}
+  end
+
+  def handle_call({:rpushx, list_name, new_items}, _from, state) do
+    new_list = Map.get(state, list_name, [])
+    |> concat_items_x(new_items, :right)
+
+    sz = new_list |> Enum.count
+    {:reply, sz, Map.put(state, list_name, new_list)}
+  end
+
+  def handle_call({:rpush, list_name, new_items}, _from, state) do
+    new_list = Map.get(state, list_name, [])
+    |> concat_items(new_items, :right)
+
+    sz = new_list |> Enum.count
+    {:reply, sz, Map.put(state, list_name, new_list)}
+  end
+
+  def handle_call({:lpop, list_name}, _from, state) do
+    {val, new_list} = pop_items_from_list :left, list_name, state
+    new_state = update_state(new_list, list_name, state)
+    {:reply, val, new_state}
+  end
+
+  def handle_call({:rpop, list_name}, _from, state) do
+    {val, new_list} = pop_items_from_list :right, list_name, state
+    new_state = update_state(new_list, list_name, state)
+    {:reply, val, new_state}
+  end
+
+  defp concat_items_x([], _items, _direction) do
+    []
+  end
+  defp concat_items_x(list, items, direction) do
+    concat_items list, items, direction
+  end
+
+  defp concat_items(lst, items, :left = _direction) do
+    items ++ lst
+  end
+  defp concat_items(lst, items, :right = _direction) do
+    lst ++ items
+  end
+
+  defp pop_items_from_list(:left, list_name, state) do
+    list = Map.get(state, list_name, [])
+    {List.first(list), Enum.drop(list, 1)}
+  end
+
+  defp pop_items_from_list(:right, list_name, state) do
+    list = Map.get(state, list_name, [])
+    {List.last(list), Enum.drop(list, -1)}
+  end
+
+  defp get_items_in_range([], _start, _stop) do
+    []
+  end
+
+  defp get_items_in_range(list, start, stop) when start < 0 do
+    get_items_in_range list, 0, stop
+  end
+
+  defp get_items_in_range(list, start, stop) when stop < 0 do
+    sz = Enum.count list
+    last = sz + stop
+    get_items_in_range list, start, last
+  end
+
+  defp get_items_in_range(list, start, stop) do
+    list |> Enum.slice(start, stop + 1)
+  end
+
+  defp update_state([] = _list, list_name, state) do
+    Map.delete(state, list_name)
+  end
+
+  defp update_state(list, list_name, state) do
+    Map.put(state, list_name, list)
+  end
+
+  defp update_at(list, idx, val) do
+    case idx < Enum.count(list) do
+      false -> {:error, list}
       _ ->
-        new_items       = items |> List.update_at(idx, fn(_x) -> val end)
-        new_state = update_state state, new_items
-        {:reply, :ok, new_state}
+        ll = list |> List.update_at(idx, fn(_x) -> val end)
+        {:ok, ll}
     end
-  end
-
-  # SantoshTODO: Mixin Termination stuff
-  def terminate(:normal, %{key_name: key_name}) do
-    Remixdb.KeyHandler.remove key_name
-    :ok
-  end
-
-  defp get_items_in_range(start, stop, items) do
-    length = items |> Enum.count
-    take_amt = (case (stop >= 0) do
-      true -> stop
-      _    -> (length - :erlang.abs(stop))
-    end) + 1
-    drop_amt = case (start >= 0) do
-      true -> start
-      _    -> case (:erlang.abs(start) > length) do
-        true -> 0
-        _    -> (length - :erlang.abs(start))
-      end
-    end
-    items |> Enum.take(take_amt) |> Enum.drop(drop_amt)
-  end
-
-  defp add_items_to_list(push_direction, new_items, state) do
-    %{items: items} = state
-    updated_items = case push_direction do
-      :left  -> (new_items ++ items)
-      :right -> (items ++ new_items)
-    end
-    new_state = update_state state, updated_items
-    list_sz = updated_items |> Enum.count
-    {:reply, list_sz, new_state}
-  end
-
-  defp pop_items_from_list(pop_direction, state) do
-    {head, updated_items} = case Map.get(state, :items) do
-      []    ->
-        {:undefined, []}
-      list ->
-        case pop_direction do
-          :left ->
-            [h|t] = list
-            {h, t}
-          :right ->
-            [h|t] = list |> :lists.reverse
-            {h, (t |> :lists.reverse)}
-        end
-    end
-    Remixdb.Keys.popped_out? updated_items, self()
-    new_state = update_state state, updated_items
-    {:reply, head, new_state}
-  end
-
-  defp update_state(state, updated_items) do
-    Map.merge(state, %{items: updated_items})
   end
 end

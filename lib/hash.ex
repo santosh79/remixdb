@@ -1,189 +1,246 @@
+alias Remixdb.Counter, as: Counter
+
 defmodule Remixdb.Hash do
   use GenServer
-  def start(key_name) do
-    GenServer.start_link __MODULE__, {:ok, key_name}, []
+
+  @name :remixdb_simple_hash
+
+  def start_link(_args) do
+    GenServer.start_link __MODULE__, :ok, name: @name
   end
 
-  def init({:ok, key_name}) do
-    {:ok, %{items: Map.new(), key_name: key_name}}
+  def init(:ok) do
+    {:ok, Map.new}
   end
 
-  def hset(name, new_items) do
-    GenServer.call name, {:hset, new_items}
+  def flushall() do
+    GenServer.call @name, :flushall
   end
 
-  def hincrby(name, field, val) do
-    GenServer.call name, {:hincrby, field, val}
+  def dbsize() do
+    GenServer.call @name, :dbsize
   end
 
-  def hsetnx(name, field, val) do
-    GenServer.call name, {:hsetnx, field, val}
+  def hset(hash_name, key, val) do
+    GenServer.call @name, {:hset, hash_name, key, val}
   end
 
-  def hlen(nil) do; 0; end
-  def hlen(name) do
-    GenServer.call name, :hlen
+  def hsetnx(hash_name, key, val) do
+    GenServer.call @name, {:hsetnx, hash_name, key, val}
   end
 
-  def hgetall(nil) do; []; end
-  def hgetall(name) do
-    GenServer.call name, :hgetall
+  def hmset(hash_name, fields) do
+    GenServer.call @name, {:hmset, hash_name, fields}
   end
 
-  def hdel(nil, _) do; 0; end
-  def hdel(name, fields) do
-    GenServer.call name, {:hdel, fields}
+  def hmget(hash_name, fields) do
+    GenServer.call @name, {:hmget, hash_name, fields}
   end
 
-  def hmget(nil, fields) do
-    fields |> Enum.map(fn(_) -> :undefined end)
-  end
-  def hmget(name, fields) do
-    GenServer.call name, {:hmget, fields}
+  def hget(hash_name, key) do
+    GenServer.call @name, {:hget, hash_name, key}
   end
 
-  def hmset(name, fields) do
-    GenServer.call name, {:hmset, fields}
+  def hlen(hash_name) do
+    GenServer.call @name, {:hlen, hash_name}
   end
 
-  def hget(nil, _) do; :undefined; end
-  def hget(name, field) do
-    GenServer.call name, {:hget, field}
+  def hgetall(hash_name) do
+    GenServer.call @name, {:hgetall, hash_name}
   end
 
-  def hexists(nil, _) do; 0; end
-  def hexists(name, field) do
-    GenServer.call name, {:hexists, field}
+  def hkeys(hash_name) do
+    GenServer.call @name, {:hkeys, hash_name}
   end
 
-  def hstrlen(nil, _) do; 0; end
-  def hstrlen(name, field) do
-    GenServer.call name, {:hstrlen, field}
+  def hvals(hash_name) do
+    GenServer.call @name, {:hvals, hash_name}
   end
 
-  def hkeys(nil) do; []; end
-  def hkeys(name) do
-    GenServer.call name, :hkeys
+  def hexists(hash_name, key) do
+    GenServer.call @name, {:hexists, hash_name, key}
   end
 
-  def hvals(nil) do; []; end
-  def hvals(name) do
-    GenServer.call name, :hvals
+  def hstrlen(hash_name, key) do
+    GenServer.call @name, {:hstrlen, hash_name, key}
   end
 
-  def handle_info(_, state), do: {:noreply, state}
-  def handle_call(:hkeys, _from, %{items: items} = state) do
-    keys = items |> Map.keys
+  def hdel(hash_name, keys) do
+    GenServer.call @name, {:hdel, hash_name, keys}
+  end
+
+  def hincrby(hash_name, key, amt) do
+    GenServer.call @name, {:hincrby, hash_name, key, amt}
+  end
+
+  def rename(old_name, new_name) do
+    GenServer.call @name, {:rename, old_name, new_name}
+  end
+
+  def handle_call({:hincrby, hash_name, key, amt}, _from, state) do
+    old_map = Map.get(state, hash_name)
+
+    new_val = Counter.incrby Map.get(old_map, key), amt
+    new_map = Map.put(old_map, key, new_val)
+    new_state = state |> Map.put(hash_name, new_map)
+
+    {:reply, new_val, new_state}
+    
+  end
+
+  def handle_call({:hdel, hash_name, keys}, _from, state) do
+    old_map = Map.get(state, hash_name, Map.new)
+
+    num_deleted = keys
+    |> Enum.count(fn(kk) ->
+      Map.has_key? old_map, kk
+    end)
+
+    new_map = keys
+    |> Enum.reduce(old_map, fn(kk, acc) ->
+      Map.delete(acc, kk)
+    end)
+
+    new_state = Map.put(state, hash_name, new_map)
+
+    {:reply, num_deleted, new_state}
+  end
+
+  def handle_call({:hstrlen, hash_name, key}, _from, state) do
+    res = Map.get(state, hash_name, Map.new)
+    |> Map.get(key, "")
+    |> :erlang.byte_size
+
+    {:reply, res, state}
+  end
+
+  def handle_call({:hkeys, hash_name}, _from, state) do
+    keys = state
+    |> Map.get(hash_name, Map.new)
+    |> Map.keys
     {:reply, keys, state}
   end
 
-  def handle_call(:hvals, _from, %{items: items} = state) do
-    vals = items |> Map.values
+  def handle_call({:hvals, hash_name}, _from, state) do
+    vals = state
+    |> Map.get(hash_name, Map.new)
+    |> Map.values
+
     {:reply, vals, state}
   end
 
-  def handle_call({:hstrlen, field}, _from, %{items: items} = state) do
-    str_len = Map.get(items, field, "") |> String.length
-    {:reply, str_len, state}
-  end
+  def handle_call({:hget, hash_name, key_name}, _from, state) do
+    val = state
+    |> Map.get(hash_name, Map.new)
+    |> Map.get(key_name)
 
-  def handle_call({:hexists, field}, _from, %{items: items} = state) do
-    exists = case Map.has_key?(items, field) do
-      true -> 1
-      _    -> 0
-    end
-    {:reply, exists, state}
-  end
-
-  def handle_call({:hmget, fields}, _from, %{items: items} = state) do
-    results = fields |> Enum.map(fn(field) ->
-      Map.get(items, field, :undefined)
-    end)
-    {:reply, results, state}
-  end
-
-  def handle_call({:hmset, fields}, _from, %{items: _items} = state) do
-    updated_items = to_map(fields)
-    new_state     = update_state updated_items, state
-    {:reply, "OK", new_state}
-  end
-
-  def handle_call({:hdel, fields}, _from, %{items: items} = state) do
-    fields_set         = fields |> MapSet.new
-    keys_that_remain   = items |> Map.keys |> MapSet.new |> MapSet.difference(fields_set)
-    num_fields_removed = (items |> Map.keys |> Enum.count) - (keys_that_remain |> Enum.count)
-    updated_items = keys_that_remain |> Enum.reduce(%{}, fn(key, acc) ->
-      val = Map.get(items, key)
-      Map.put(acc, key, val)
-    end)
-
-    new_state = update_state updated_items, state
-    {:reply, num_fields_removed, new_state}
-  end
-
-  def handle_call({:hget, field}, _from, %{items: items} = state) do
-    val = Map.get(items, field, :undefined)
     {:reply, val, state}
   end
 
-  def handle_call({:hincrby, field, val}, _from, %{items: items} = state) do
-    new_val       = Map.get(items, field, 0) + (val |> String.to_integer)
-    updated_items = Map.put(items, field, new_val)
-    new_state     = update_state updated_items, state
-    {:reply, new_val, new_state}
+  def handle_call({:hgetall, hash_name}, _from, state) do
+    vals = state
+    |> Map.get(hash_name, Map.new)
+    |> Enum.reduce([], fn({kk, vv}, acc) ->
+      [kk|[vv|acc]]
+    end)
+    
+    {:reply, vals, state}
   end
 
-  def handle_call({:hsetnx, field, val}, _from, %{items: items} = state) do
-    changed? = case Map.has_key?(items, field) do
-      true -> 0
-      _    -> 1
+  def handle_call(:flushall, _from, _state) do
+    {:reply, :ok, Map.new}
+  end
+
+  def handle_call({:hmget, hash_name, fields}, _from, state) do
+    map = Map.get(state, hash_name, Map.new)
+
+    res = fields
+    |> Enum.map(fn(key) ->
+      Map.get(map, key)
+    end)
+
+    {:reply, res, state}
+  end
+
+  def handle_call({:hmset, hash_name, fields}, _from, state) do
+    old_map = state
+    |> Map.get(hash_name, Map.new)
+
+    fields_map = fields
+    |> Enum.chunk_every(2)
+    |> Map.new(fn([k, v]) ->
+      {k, v}
+    end)
+
+    new_map = Map.merge(old_map, fields_map)
+
+    new_state = Map.put(state, hash_name, new_map)
+
+    {:reply, "OK", new_state}
+  end
+
+  def handle_call({:hsetnx, hash_name, key, val}, _from, state) do
+    old_map = state |> Map.get(hash_name, Map.new)
+
+    {res, new_state} = case Map.get(old_map, key, nil) do
+                         nil ->
+                           new_map = old_map |> Map.put(key, val)
+                           new_state = Map.put(state, hash_name, new_map)
+                           {1, new_state}
+                         _ ->
+                           {0, state}
+                       end
+    {:reply, res, new_state}
+
+  end
+
+  def handle_call({:hset, hash_name, key, val}, _from, state) do
+    old_map = state
+    |> Map.get(hash_name, Map.new)
+
+    new_map = old_map
+    |> Map.put(key, val)
+
+    updated_state = state
+    |> Map.put(hash_name, new_map)
+
+    {:reply, key_inserted?(old_map, key), updated_state}
+  end
+
+  def handle_call(:dbsize, _from, state) do
+    sz = state |> Map.keys |> Enum.count
+    {:reply, sz, Map.new}
+  end
+
+  def handle_call({:hlen, hash_name}, _from, state) do
+    sz = state |> Map.get(hash_name, Map.new) |> Enum.count
+    {:reply, sz, state}
+  end
+
+  def handle_call({:hexists, hash_name, key}, _from, state) do
+    res = state
+    |> Map.get(hash_name, Map.new)
+    |> has_key?(key)
+
+    {:reply, res, state}
+  end
+
+  def handle_call({:rename, old_name, new_name}, _from, state) do
+    {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
+    {:reply, res, new_state}
+  end
+
+  defp key_inserted?(map, key) do
+    case has_key?(map, key) do
+      1 -> 0
+      0 -> 1
     end
-    updated_items = Map.put(items, field, val)
-    new_state     = update_state updated_items, state
-    {:reply, changed?, new_state}
   end
 
-  def handle_call({:hset, new_items}, _from, %{items: items} = state) do
-    new_key = Map.keys(new_items) |> List.first
-    return_val = case Map.has_key?(items, new_key) do
-      true -> 0
-      _    -> 1
+  defp has_key?(hash, key) do
+    case Map.has_key?(hash, key) do
+      true -> 1
+      _ -> 0
     end
-    updated_items = Map.merge items, new_items
-    new_state     = update_state updated_items, state
-    {:reply, return_val, new_state}
-  end
-
-  def handle_call(:hgetall, _from, %{items: items} = state) do
-    result = items |> to_list
-    {:reply, result, state}
-  end
-
-  def handle_call(:hlen, _from, %{items: items} = state) do
-    num_items = items |> Map.keys |> Enum.count
-    {:reply, num_items, state}
-  end
-
-  defp update_state(updated_items, state) do
-    Map.merge(state, %{items: updated_items})
-  end
-
-  defp to_list(items) when is_map(items) do
-    items |> Map.to_list |> flatten
-  end
-  defp flatten(items) do; flatten(items, []); end
-  defp flatten([], acc) do; acc |> :lists.reverse; end
-  defp flatten([h|t], acc) do
-    {f,s} = h
-    flatten t, [f|[s|acc]]
-  end
-
-  defp to_map(fields) do
-    to_map fields, %{}
-  end
-  defp to_map([], acc) do; acc; end
-  defp to_map([k,v|rest], acc) do
-    to_map rest, Map.put(acc, k, v)
   end
 end
-

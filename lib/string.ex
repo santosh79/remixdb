@@ -1,145 +1,115 @@
+alias Remixdb.Counter, as: Counter
+
 defmodule Remixdb.String do
   use GenServer
-  def start(key_name) do
-    GenServer.start_link __MODULE__, {:ok, key_name}, []
+
+  @name :remixdb_simple_string
+
+  def start_link(_args) do
+    GenServer.start_link __MODULE__, :ok, name: @name
   end
 
-  def init({:ok, key_name}) do
-    {:ok, %{val: :undefined, key_name: key_name}}
+  def init(:ok) do
+    {:ok, Map.new}
   end
 
-
-  def get(nil) do; nil; end
-  def get(pid) do
-    GenServer.call(pid, :get)
+  def flushall() do
+    GenServer.call @name, :flushall
   end
 
-  def getset(name, val) do
-    GenServer.call(name, {:getset, val})
+  def dbsize() do
+    GenServer.call @name, :dbsize
   end
 
-  def set(name, val) do
-    GenServer.call(name, {:set, val})
+  def set(key, val) do
+    GenServer.call @name, {:set, key, val}
   end
 
-  def decr(name) do
-    GenServer.call(name, :decr)
+  def getset(key, val) do
+    GenServer.call @name, {:getset, key, val}
   end
 
-  def incr(name) do
-    GenServer.call(name, :incr)
+  def get(key) do
+    GenServer.call @name, {:get, key}
   end
 
-  def incrby(name, val) do
-    GenServer.call(name, {:incrby, val})
+  def rename(old_name, new_name) do
+    GenServer.call @name, {:rename, old_name, new_name}
   end
 
-  def decrby(name, val) do
-    GenServer.call(name, {:decrby, val})
+  def append(key, val) do
+    GenServer.call @name, {:append, key, val}
   end
 
-  def append(name, val) do
-    GenServer.call(name, {:append, val})
+  def incr(key) do
+    GenServer.call @name, {:incrby, key, 1}
   end
 
-  def setex(name, timeout_str, val) do
-    timeout = timeout_str |> String.to_integer
-    GenServer.call(name, {:setex, timeout, val})
+  def incrby(key, vv) do
+    {val, ""} = Integer.parse(vv)
+    GenServer.call @name, {:incrby, key, val}
   end
 
-  def ttl(nil) do; -2; end
-  def ttl(name) do
-    GenServer.call(name, :ttl)
+  def decr(key) do
+    GenServer.call @name, {:incrby, key, -1}
   end
 
-  def expire_with_no_response(name, timeout) do
-    spawn(fn ->
-      timeout |> :timer.sleep
-      GenServer.stop(name, :normal)
-    end)
+  def decrby(key, vv) do
+    {val, ""} = Integer.parse(vv)
+    GenServer.call @name, {:incrby, key, val * -1}
   end
 
-  def handle_info(_, state), do: {:noreply, state}
+  def handle_call(:flushall, _from, _state) do
+    {:reply, :ok, Map.new}
+  end
 
-  def handle_call(:get, _from, state) do
-    %{val: val} = state
+  def handle_call(:dbsize, _from, state) do
+    sz = state |> Map.keys |> Enum.count
+    {:reply, sz, Map.new}
+  end
+
+  def handle_call({:append, key, val}, _from, state) do
+    old_val = state |> Map.get(key)
+
+    new_val = if old_val == nil do
+      val
+    else
+      <<old_val::binary, val::binary>>
+    end
+
+    sz = new_val |> :erlang.byte_size
+    new_state     = Map.put(state, key, new_val)
+    {:reply, sz, new_state}
+  end
+
+  def handle_call({:incrby, key, incrby}, _from, state) do
+    new_val = Counter.incrby get_val(state, key), incrby
+    new_state = state |> Map.put(key, new_val)
+    {:reply, new_val, new_state}
+  end
+
+  def handle_call({:get, key}, _from, state) do
+    val = get_val(state, key)
     {:reply, val, state}
   end
 
-  def handle_call({:getset, val}, _from, state) do
-    %{val: old_val} = state
-    new_state       = Map.put(state, :val, val)
+  def handle_call({:getset, key, val}, _from, state) do
+    old_val = get_val(state, key)
+    new_state = state |> Map.put(key, val)
     {:reply, old_val, new_state}
   end
 
-  def handle_call({:set, val}, _from, state) do
-    new_state = Map.put(state, :val, val)
+  def handle_call({:set, key, val}, _from, state) do
+    new_state = state |> Map.put(key, val)
     {:reply, :ok, new_state}
   end
 
-  def handle_call({:incrby, val_str}, _from, state) do
-    to_i = &String.to_integer/1
-    new_val = case Map.get(state, :val) do
-      :undefined -> to_i.(val_str)
-      old_val    -> (old_val + to_i.(val_str))
-    end
-    new_state = Map.put(state, :val, new_val)
-    {:reply, new_val, new_state}
+  def handle_call({:rename, old_name, new_name}, _from, state) do
+    {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
+    {:reply, res, new_state}
   end
 
-  def handle_call(:decr, _from, state) do
-    new_val = case Map.get(state, :val) do
-      :undefined -> -1
-      old_val    -> old_val - 1
-    end
-    new_state = Map.put(state, :val, new_val)
-    {:reply, new_val, new_state}
-  end
-
-  def handle_call({:decrby, val_str}, _from, state) do
-    to_i = &String.to_integer/1
-    new_val = case Map.get(state, :val) do
-      :undefined -> to_i.(val_str) * -1
-      old_val    -> (old_val - to_i.(val_str))
-    end
-    new_state = Map.put(state, :val, new_val)
-    {:reply, new_val, new_state}
-  end
-
-  def handle_call(:incr, _from, state) do
-    new_val = case Map.get(state, :val) do
-      :undefined -> 1
-      old_val    -> old_val + 1
-    end
-    new_state = Map.put(state, :val, new_val)
-    {:reply, new_val, new_state}
-  end
-
-  def handle_call({:append, val}, _from, state) do
-    new_val = case Map.get(state, :val) do
-      :undefined -> val
-      old_val    -> (old_val <> val)
-    end
-    string_length = new_val |> String.length
-    new_state     = Map.put(state, :val, new_val)
-    {:reply, string_length, new_state}
-  end
-
-  # SantoshTODO: Mixin Termination stuff
-  def handle_call({:setex, timeout, val}, _from, state) do
-    Remixdb.String.expire_with_no_response self(), timeout
-    new_state =  state |> Map.merge(%{timeout: timeout, val: val})
-    {:reply, :ok, new_state}
-  end
-
-  def handle_call(:ttl, _from, state) do
-    %{timeout: timeout} = state
-    {:reply, timeout, state}
-  end
-
-  def terminate(:normal, %{key_name: key_name}) do
-    Remixdb.KeyHandler.remove key_name
-    :ok
+  defp get_val(state, key) when is_map(state) do
+    state |> Map.get(key)
   end
 end
-

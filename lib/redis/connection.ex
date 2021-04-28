@@ -1,7 +1,7 @@
-alias Remixdb.SimpleString, as: RSS
-alias Remixdb.SimpleList, as: RL
-alias Remixdb.SimpleSet, as: RST
-alias Remixdb.SimpleHash, as: RSH
+alias Remixdb.String, as: RSS
+alias Remixdb.List, as: RL
+alias Remixdb.Set, as: RST
+alias Remixdb.Hash, as: RSH
 
 import Remixdb.Redis.ResponseHandler, only: [send_response: 2]
 
