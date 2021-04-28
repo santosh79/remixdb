@@ -47,7 +47,6 @@ defmodule Remixdb.Parsers.RedisParser do
     {:ok, dd}
   end
 
-
   defp read_line(socket) do
     :gen_tcp.recv(socket, 0)
   end
@@ -66,7 +65,6 @@ defmodule Remixdb.Parsers.RedisParser do
   end
 
   defp parse_command(cmd, args) do
-    :io.format("~n~n parse_command, cmd ~p, args ~p ~n~n", [cmd, args])
     case (cmd |> String.upcase) do
       "CONFIG"      -> {:config, args}
       "SET"         -> {:set, args}
@@ -101,6 +99,7 @@ defmodule Remixdb.Parsers.RedisParser do
       "SREM"        -> {:srem, args}
       "SMEMBERS"    -> {:smembers, args}
       "SISMEMBER"   -> {:sismember, args}
+      "SMISMEMBER"  -> {:smismember, args}
       "SCARD"       -> {:scard, args}
       "SUNION"      -> {:sunion, args}
       "SDIFF"       -> {:sdiff, args}

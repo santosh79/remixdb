@@ -17,7 +17,7 @@ defmodule Remixdb.Server do
   end
 
   def handle_info(:long_init, _state) do
-    :io.format("~n~n --- started remixdb.server with pid ~p ~n~n", [self()])
+    :io.format("~p -- pid: ~p ~n", [__MODULE__, self()])
     tcp_pid = start_tcp_server()
 
     {:noreply, %State{tcp_server_pid: tcp_pid}}
@@ -27,14 +27,13 @@ defmodule Remixdb.Server do
     # The Client connection that will handle the long running
     # request
     client_mod = case Application.get_env(:remixdb, :client) do
-      nil -> Remixdb.RedisClient
-      mod -> mod
-    end
-    :io.format("~n~n Remixdb.TcpServer client_mod: ~p ~n~n", [client_mod])
+                   nil -> Remixdb.RedisConnection
+                   mod -> mod
+                 end
+    :io.format("~p client_mod: ~p ~n", [__MODULE__, client_mod])
 
     port = Application.get_env(:remixdb, :port)
     tcp_pid = spawn_link(Remixdb.TcpServer, :start, [port, client_mod])
-    :io.format("~n~n -- started Remixdb.TcpServer at -- ~p ~n~n", [port])
 
     Process.register tcp_pid, :remixdb_tcp_server
     tcp_pid

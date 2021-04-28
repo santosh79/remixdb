@@ -10,6 +10,10 @@ defmodule Remixdb.Supervisor do
   def init(:ok) do
     children = [
       Remixdb.Server,
+      Remixdb.SimpleString,
+      Remixdb.SimpleHash,
+      Remixdb.SimpleSet,
+      Remixdb.SimpleList,
       Remixdb.KeyHandler
     ]
     Supervisor.init(children, strategy: :one_for_one)
