@@ -2,7 +2,7 @@ defmodule Remixdb.TcpServer do
 
   def start(port \\ 6379, client_mod \\ Remixdb.RedisClient) do
     {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true, backlog: 1_000])
-    IO.puts "Accepting connections on port: #{port}"
+    :io.format("~p at port: ~p ~n", [__MODULE__, port])
     accept_loop socket, client_mod
   end
 
