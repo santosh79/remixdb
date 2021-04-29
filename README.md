@@ -66,11 +66,13 @@ This library is still being worked on, so it does NOT support all of redis' comm
 This will happen, soon!
 
 ## Missing commands
-- Sorted set implementation
+- RENAMENX
+- Expiry and TTL commands
+- Sorted sets
 - Bitmaps & HyperLogLogs
 - Blocking commands
 - Pub Sub commands
-- LUA scripting stuff
+- LUA scripting
 
 ## Author
 
