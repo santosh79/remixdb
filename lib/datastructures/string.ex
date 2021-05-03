@@ -3,7 +3,7 @@ alias Remixdb.Counter, as: Counter
 defmodule Remixdb.String do
   use GenServer
 
-  @name :remixdb_string
+  @name __MODULE__
 
   def start_link(_args) do
     GenServer.start_link __MODULE__, :ok, name: @name
