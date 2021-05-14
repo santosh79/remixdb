@@ -62,8 +62,24 @@ defmodule RemixdbTest do
         val = key = UUID.uuid4
         client |> Exredis.query(["SET", key, val])
       end)
+      1..1_000 |> Enum.each(fn(_x) ->
+        val = key = UUID.uuid4
+        client |> Exredis.query(["LPUSH", key, val])
+      end)
+
+      1..1_000 |> Enum.each(fn(_x) ->
+        val = key = UUID.uuid4
+        hash_name = UUID.uuid4
+        client |> Exredis.query(["HSET", hash_name, key, val])
+      end)
+
+      1..1_000 |> Enum.each(fn(_x) ->
+        val = set_name = UUID.uuid4
+        client |> Exredis.query(["SADD", set_name, val])
+      end)
+
       val = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
-      assert val === (prev_db_size + 1_000)
+      assert val === (prev_db_size + 4_000)
     end
 
     test "ping", %{client: client} do
@@ -707,7 +723,6 @@ defmodule RemixdbTest do
     test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL, HGETALL, HSTRLEN, HSETNX, HINCRBY", %{client: client} do
       my_hash = UUID.uuid4
       unknown_hash = UUID.uuid4
-      counter= UUID.uuid4
 
       val = client |> Exredis.query(["HSET", my_hash, "name", "john"])
       assert val === "1"
