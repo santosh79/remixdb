@@ -1,6 +1,6 @@
 defmodule Remixdb.Benchmark.DataStructures do
   def map_perf(num_elms \\ 1_000_000) when is_integer(num_elms) and num_elms > 1 do
-    el = :rand.uniform(num_elms)
+    _el = :rand.uniform(num_elms)
     :timer.tc(fn ->
       mp_st = 1..num_elms |> Enum.reduce(%{}, fn(x, map) ->
         Map.put(map, x, 1)
