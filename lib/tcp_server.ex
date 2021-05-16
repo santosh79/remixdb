@@ -6,14 +6,24 @@ defmodule Remixdb.TcpServer do
     accept_loop socket, client_mod
   end
 
+  def handle_info({'DOWN', ref, :process, _pid, _reason}, state) do
+    updated_state = state |> Map.delete(ref)
+    {:noreply, updated_state}
+  end
+
   def handle_info(_, state), do: {:noreply, state}
-  defp accept_loop(socket, client_mod) do
+
+  defp accept_loop(socket, client_mod, state \\ %{}) do
     # Wait for a connection
     {:ok, client_sock} = :gen_tcp.accept(socket)
 
-    spawn_link(client_mod, :start_link, [client_sock])
-
-    accept_loop socket, client_mod
+    {pid, mon} = :erlang.spawn_monitor(fn ->
+      :erlang.apply client_mod, :start_link, [client_sock]
+      # receive do
+      # end
+    end)
+    updated_state = state |> Map.put(mon, pid)
+    accept_loop socket, client_mod, updated_state
   end
 end
 
