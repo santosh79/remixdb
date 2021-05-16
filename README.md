@@ -41,7 +41,7 @@ redis-benchmark -t get -n 100000 -r 100000000
 Docker is the preferred way to run this:
 
 ```
-docker container run -d --rm -p 6379:6379 santoshdocker2021/remixdb:latest
+docker container run -d --rm -p 6379:6379 --name remixdb santoshdocker2021/remixdb:latest
 ```
 
 NO docker, then:
