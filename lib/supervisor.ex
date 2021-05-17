@@ -9,9 +9,9 @@ defmodule Remixdb.Supervisor do
 
   def init(:ok) do
     children = [
-      Remixdb.Server,
       Remixdb.String,
       Remixdb.Hash,
+      Remixdb.TcpServer,
       Remixdb.Set,
       Remixdb.List
     ]
