@@ -3,8 +3,6 @@ alias Remixdb.List, as: RL
 alias Remixdb.Set, as: RST
 alias Remixdb.Hash, as: RSH
 
-import Remixdb.Redis.ResponseHandler, only: [send_response: 2]
-
 defmodule Remixdb.RedisConnection do
   use GenServer
   def start_link(socket) do
@@ -29,7 +27,7 @@ defmodule Remixdb.RedisConnection do
   def handle_info(:read_socket, %State{socket: socket, parser: parser} = state) do
     {:ok, msg} = Remixdb.Parser.read_command(parser)
     re = get_response(msg)
-    socket |> send_response(re)
+    socket |> Remixdb.Redis.ResponseHandler.send_response(re)
     send self(), :read_socket
     {:noreply, state}
   end
