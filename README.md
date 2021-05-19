@@ -62,7 +62,7 @@ We need Databases that are fault-tolerant, highly available and that can scale a
 This library is still being worked on, so it does NOT support all of redis' commands -- that being said, the plan is to get it to full compliance with Redis' single server commands, ASAP. Redis Cluster is something I do not believe in - since I do not understand the Availability Guarantees it provides.
 
 
-## Clustering and Master Slave setup with Automatic Failover
+## Clustering and Master Read Replica setup with Automatic Failover
 This will happen, soon!
 
 ## Missing commands
