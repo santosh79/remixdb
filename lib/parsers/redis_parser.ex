@@ -28,13 +28,17 @@ defmodule Remixdb.Parsers.RedisParser do
   defp read_args(socket, num) do
     read_args socket, num, []
   end
+
   defp read_args(_socket, 0, accum) do
     {:ok, accum}
   end
-
   defp read_args(socket, num, accum) do
-    {:ok, _num_bytes} = read_bytes(socket)
+    {:ok, num_bytes} = read_bytes(socket)
     {:ok, data} = read_line socket
+
+    # Ensure the number of bytes matches
+    # Subtract 2 for the trailing /r/n
+    ^num_bytes = (:erlang.byte_size(data) - 2)
 
     msg = data |> :binary.part(0, :erlang.byte_size(data) - 2)
 
