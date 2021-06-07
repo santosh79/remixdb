@@ -161,152 +161,157 @@ defmodule Remixdb.Set do
     {:reply, rand_item, state}
   end
 
-  # SantoshTODO: Clean this up
   def handle_call({:smove, src, dest, member}, _from, state) do
     src_set = Map.get(state, src, MapSet.new)
+    dest_set = Map.get(state, dest, MapSet.new)
 
-    {new_state, num_items_moved} = case MapSet.member?(src_set, member) do
-                                     false -> {state, 0}
-                                     true -> 
-                                       updated_src_set = MapSet.delete(src_set, member)
-                                       updated_dest_set = Map.get(state, dest, MapSet.new) |>
-                                         MapSet.put(member)
-                                       ns = case Enum.empty?(updated_src_set) do
-                                              true -> Map.delete(state, src)
-                                              false -> Map.put(state, src, updated_src_set)
-                                            end |> Map.put(dest, updated_dest_set)
-                                       {ns, 1}
-                                   end
+    {upd_src_set, upd_dest_set, num_items_moved} = smove_helper(src_set, member, dest_set)
+
+    new_state = state
+    |> Map.delete(src)
+    |> Map.put(src, upd_src_set)
+    |> Map.delete(dest)
+    |> Map.put(dest, upd_dest_set)
 
     {:reply, num_items_moved, new_state}
   end
 
   # SantoshTODO: Figure out a way to re-factor this
-    def handle_call({:exists, set_name}, _from, state) do
-      res = !! Map.get(state, set_name, nil)
-      {:reply, res, state}
+  def handle_call({:exists, set_name}, _from, state) do
+    res = !! Map.get(state, set_name, nil)
+    {:reply, res, state}
+  end
+
+  def handle_call({:srem, name, new_items}, _from, state) do
+    old_set = Map.get(state, name, MapSet.new)
+
+    new_state = update_state(MapSet.difference(old_set, new_items), name, state)
+
+    old_sz = old_set |> Enum.count
+    new_sz = new_state |> Map.get(name) |> Enum.count
+
+    {:reply, (old_sz - new_sz), new_state}
+  end
+
+  def handle_call({:spop, set_name}, _from, state) do
+    items = state |> Map.get(set_name)
+    case (items |> get_rand_item) do
+      nil ->
+        {:reply, nil, state}
+      rand_item ->
+        new_items = items |> MapSet.new |> MapSet.delete(rand_item)
+        new_state = Map.put(state, set_name, new_items)
+        {:reply, rand_item, new_state}
     end
+  end
 
-    def handle_call({:srem, name, new_items}, _from, state) do
-      old_set = Map.get(state, name, MapSet.new)
-
-      new_state = update_state(MapSet.difference(old_set, new_items), name, state)
-
-      old_sz = old_set |> Enum.count
-      new_sz = new_state |> Map.get(name) |> Enum.count
-
-      {:reply, (old_sz - new_sz), new_state}
-    end
-
-    def handle_call({:spop, set_name}, _from, state) do
-      items = state |> Map.get(set_name)
-      case (items |> get_rand_item) do
-        nil ->
-          {:reply, nil, state}
-        rand_item ->
-          new_items = items |> MapSet.new |> MapSet.delete(rand_item)
-          new_state = Map.put(state, set_name, new_items)
-          {:reply, rand_item, new_state}
-      end
-    end
-
-    # SantoshTODO: Figure out a way to re-factor this
-    def handle_call({:sunionstore, keys}, _from, state) do
-      res = keys |>
-        Enum.map(fn(kk) ->
-          Map.get(state, kk, MapSet.new)
-        end)
-        |> union
-
-      first_key = keys |> List.first
-      num_items = res |> Enum.count
-      new_state = state |> Map.put(first_key, res)
-
-      {:reply, num_items, new_state}
-    end
-
-    def handle_call({:sinterstore, keys}, _from, state) do
-      res = keys |>
-        Enum.drop(1) |>
-        Enum.map(fn(kk) ->
-          Map.get(state, kk, MapSet.new)
-        end)
-        |> intersection
-
-      first_key = keys |> List.first
-      num_items = res |> Enum.count
-      new_state = state |> Map.put(first_key, res)
-
-      {:reply, num_items, new_state}
-    end
-
-    def handle_call({:sdiffstore, keys}, _from, state) do
-      res = do_sdiff(keys |> Enum.drop(1), state)
-      new_state = state |> Map.put(List.first(keys), res)
-      num_items = res |> Enum.count
-
-      {:reply, num_items, new_state}
-    end
-
-    def handle_call({:smismember, name, keys}, _from, state) do
-      set = Map.get(state, name, MapSet.new)
-      res = keys
-      |> Enum.map(&(is_member?(set, &1)))
-
-      {:reply, res, state}
-    end
-
-    def handle_call({:rename, old_name, new_name}, _from, state) do
-      {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
-      {:reply, res, new_state}
-    end
-
-    defp update_state(items, name, state) do
-      state |> Map.put(name, items)
-    end
-
-    defp union(sets) when is_list(sets) do
-      sets |> Enum.reduce(MapSet.new, &MapSet.union/2)
-    end
-
-    defp intersection(sets) when is_list(sets) do
-      sets
-      |> Enum.drop(1)
-      |> Enum.reduce(List.first(sets), &MapSet.intersection/2)
-    end
-    
-    defp get_sets(set_names, state) when is_list(set_names) do
-      set_names
-      |> Enum.map(fn(x) ->
-        Map.get(state, x, MapSet.new)
+  # SantoshTODO: Figure out a way to re-factor this
+  def handle_call({:sunionstore, keys}, _from, state) do
+    res = keys |>
+      Enum.map(fn(kk) ->
+        Map.get(state, kk, MapSet.new)
       end)
+      |> union
+
+    first_key = keys |> List.first
+    num_items = res |> Enum.count
+    new_state = state |> Map.put(first_key, res)
+
+    {:reply, num_items, new_state}
+  end
+
+  def handle_call({:sinterstore, keys}, _from, state) do
+    res = keys |>
+      Enum.drop(1) |>
+      Enum.map(fn(kk) ->
+        Map.get(state, kk, MapSet.new)
+      end)
+      |> intersection
+
+    first_key = keys |> List.first
+    num_items = res |> Enum.count
+    new_state = state |> Map.put(first_key, res)
+
+    {:reply, num_items, new_state}
+  end
+
+  def handle_call({:sdiffstore, keys}, _from, state) do
+    res = do_sdiff(keys |> Enum.drop(1), state)
+    new_state = state |> Map.put(List.first(keys), res)
+    num_items = res |> Enum.count
+
+    {:reply, num_items, new_state}
+  end
+
+  def handle_call({:smismember, name, keys}, _from, state) do
+    set = Map.get(state, name, MapSet.new)
+    res = keys
+    |> Enum.map(&(is_member?(set, &1)))
+
+    {:reply, res, state}
+  end
+
+  def handle_call({:rename, old_name, new_name}, _from, state) do
+    {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
+    {:reply, res, new_state}
+  end
+
+  defp update_state(items, name, state) do
+    state |> Map.put(name, items)
+  end
+
+  defp union(sets) when is_list(sets) do
+    sets |> Enum.reduce(MapSet.new, &MapSet.union/2)
+  end
+
+  defp intersection(sets) when is_list(sets) do
+    sets
+    |> Enum.drop(1)
+    |> Enum.reduce(List.first(sets), &MapSet.intersection/2)
+  end
+  
+  defp get_sets(set_names, state) when is_list(set_names) do
+    set_names
+    |> Enum.map(fn(x) ->
+      Map.get(state, x, MapSet.new)
+    end)
+  end
+
+  defp get_rand_item(nil) do
+    nil
+  end
+
+  defp get_rand_item(st) do
+    case Enum.empty?(st) do
+      true -> nil
+      _ -> Enum.random(st)
     end
+  end
 
-    defp get_rand_item(nil) do
-      nil
+  defp do_sdiff(set_names, state) do
+    sets = get_sets(set_names, state)
+
+    first_set = List.first(sets)
+    rest_sets  = sets |> Enum.drop(1) |> union
+
+    MapSet.difference(first_set, rest_sets)
+    |> Enum.into([])
+  end
+
+  defp is_member?(set, key) do
+    case MapSet.member?(set, key) do
+      true -> 1
+      _ -> 0
     end
+  end
 
-    defp get_rand_item(st) do
-      case Enum.empty?(st) do
-        true -> nil
-        _ -> Enum.random(st)
-      end
+  defp smove_helper(src_set, member, dest_set) do
+    case MapSet.member?(src_set, member) do
+      false -> {src_set, dest_set, 0}
+      _ ->
+        upd_src_set = MapSet.delete(src_set, member)
+        upd_dest_set = MapSet.put(dest_set, member)
+        {upd_src_set, upd_dest_set, 1}
     end
-
-    defp do_sdiff(set_names, state) do
-      sets = get_sets(set_names, state)
-
-      first_set = List.first(sets)
-      rest_sets  = sets |> Enum.drop(1) |> union
-
-      MapSet.difference(first_set, rest_sets)
-      |> Enum.into([])
-    end
-
-    defp is_member?(set, key) do
-      case MapSet.member?(set, key) do
-        true -> 1
-        _ -> 0
-      end
-    end
+  end
 end
