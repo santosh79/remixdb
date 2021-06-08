@@ -121,14 +121,15 @@ defmodule Remixdb.List do
     {:reply, item, state}
   end
   
-  def handle_call({:ltrim, list_name, start, stop}, _from, state)
+  def handle_call({:ltrim, list_name, start, stop}, from, state)
   when is_integer(start) and is_integer(stop) do
+    GenServer.reply from, :ok
 
     updated_list = Map.get(state, list_name, []) |>
       get_items_in_range(start, stop)
 
 
-    {:reply, :ok, Map.put(state, list_name, updated_list)}
+    {:noreply, Map.put(state, list_name, updated_list)}
   end
 
   def handle_call({:lrange, list_name, start, stop}, _from, state)

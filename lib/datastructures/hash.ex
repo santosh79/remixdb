@@ -85,7 +85,6 @@ defmodule Remixdb.Hash do
     new_state = state |> Map.put(hash_name, new_map)
 
     {:reply, new_val, new_state}
-    
   end
 
   def handle_call({:hdel, hash_name, keys}, _from, state) do
