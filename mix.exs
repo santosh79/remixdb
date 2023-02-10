@@ -4,7 +4,7 @@ defmodule Remixdb.Mixfile do
   def project do
     [app: :remixdb,
      version: "0.0.3",
-     elixir: "~> 1.7",
+     elixir: "~> 1.14",
      description: "A caching library written in pure elixir",
      start_permanent: Mix.env == :prod,
      deps: deps()
