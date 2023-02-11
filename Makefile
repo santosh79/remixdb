@@ -1,3 +1,6 @@
+clean:
+	rm -rf _build
+
 build:
 	MIX_ENV=dev mix release
 
