@@ -4,7 +4,7 @@ defmodule Remixdb.TcpServer do
   @name :remixdb_tcp_server
 
   def start_link(_args) do
-    GenServer.start_link __MODULE__, %{port: 6379, client_mod: Remixdb.RedisConnection}, name: @name
+    GenServer.start_link __MODULE__, %{port: 6379}, name: @name
   end
 
   def init(args) do
@@ -28,11 +28,11 @@ defmodule Remixdb.TcpServer do
     {:noreply, state}
   end
 
-  def handle_info(:accept, %{socket: socket, client_mod: client_mod} = state) do
+  def handle_info(:accept, %{socket: socket} = state) do
     case :gen_tcp.accept(socket, 1_000) do
       {:error, :timeout} -> nil
       {:ok, client_sock} ->
-        :erlang.apply client_mod, :start_link, [client_sock]
+        Remixdb.RedisConnection.start_link(client_sock)
     end
     send self(), :accept
     {:noreply, state}
