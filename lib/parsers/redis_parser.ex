@@ -127,6 +127,7 @@ defmodule Remixdb.Parsers.RedisParser do
       "HEXISTS"     -> {:hexists, args}
       "HSTRLEN"     -> {:hstrlen, args}
       "HINCRBY"     -> {:hincrby, args}
+      "COMMAND"     -> {:command, args}
     end
   end
 end
