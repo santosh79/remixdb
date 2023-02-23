@@ -4,3 +4,5 @@ erl_crash.dump
 *.ez
 remixdb
 .DS_Store
+/.elixir_ls
+.dockerignore
