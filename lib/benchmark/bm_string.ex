@@ -2,11 +2,11 @@ defmodule Remixdb.BM.String do
   use GenServer
 
   def start_link([]) do
-    GenServer.start_link __MODULE__, %{}
+    GenServer.start_link(__MODULE__, %{})
   end
 
   def init(state) do
-    send self(), :long_init
+    send(self(), :long_init)
     {:ok, state}
   end
 
@@ -22,17 +22,17 @@ defmodule Remixdb.BM.String do
 
   def run_bm(num_connections \\ 10, num_times \\ 50, num_elms \\ 1_000) do
     1..num_connections
-    |> Enum.map(fn(_) ->
-      {:ok, pp} = Remixdb.BM.String.start_link []
+    |> Enum.map(fn _ ->
+      {:ok, pp} = Remixdb.BM.String.start_link([])
       pp
     end)
-    |> Enum.map(fn(pid) ->
+    |> Enum.map(fn pid ->
       Remixdb.BM.String.bm(pid, num_times, num_elms)
     end)
   end
 
   def bm(pid) when is_pid(pid) do
-    bm pid, 50, 10_000
+    bm(pid, 50, 10_000)
   end
 
   @doc """
@@ -42,64 +42,71 @@ defmodule Remixdb.BM.String do
   - during each run it does num_elms gets and sets
   """
   def bm(pid, num_times, num_elms) when is_pid(pid) do
-    GenServer.cast pid, {:benchmark, 0, num_times, pid, num_elms, []}
+    GenServer.cast(pid, {:benchmark, 0, num_times, pid, num_elms, []})
   end
 
   def handle_info(:long_init, state) do
     client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
-    :timer.sleep 1_000
+    :timer.sleep(1_000)
     updated_state = state |> Map.put(:client, client)
     {:noreply, updated_state}
   end
-  
+
   def handle_info(_, state) do
     {:noreply, state}
   end
 
   def handle_cast({:stop, num_elms}, %{client: client, results: res} = state) do
-    :ok = client |> Exredis.stop
-    :timer.sleep 300
-    print_results res, num_elms
+    :ok = client |> Exredis.stop()
+    :timer.sleep(300)
+    print_results(res, num_elms)
     {:stop, :normal, state}
   end
 
-  def handle_cast({:benchmark, num_times, num_times, pid, num_elms, results}, %{client: _client} = state) do
+  def handle_cast(
+        {:benchmark, num_times, num_times, pid, num_elms, results},
+        %{client: _client} = state
+      ) do
     :io.format("~p with pid: ~p -- DONE! ~n", [__MODULE__, pid])
-    GenServer.cast pid, {:stop, num_elms}
+    GenServer.cast(pid, {:stop, num_elms})
 
     updated_state = Map.put(state, :results, results)
     {:noreply, updated_state}
   end
 
-  def handle_cast({:benchmark, num_runs, num_times, pid, num_elms, results}, %{client: client} = state) do
-    res = get_and_set num_elms, client
-    GenServer.cast pid, {:benchmark, num_runs + 1, num_times, pid, num_elms, [res|results]}
+  def handle_cast(
+        {:benchmark, num_runs, num_times, pid, num_elms, results},
+        %{client: client} = state
+      ) do
+    res = get_and_set(num_elms, client)
+    GenServer.cast(pid, {:benchmark, num_runs + 1, num_times, pid, num_elms, [res | results]})
     {:noreply, state}
   end
 
-
   defp get_and_set(num_elms, client) do
-    kvs =  create_key_vals num_elms
+    kvs = create_key_vals(num_elms)
 
-    set_time = :timer.tc(fn ->
-      kvs
-      |> Enum.map(fn({key, val}) ->
-        Task.async(fn ->
-          client |> Exredis.query(["SET", key, val])
+    set_time =
+      :timer.tc(fn ->
+        kvs
+        |> Enum.map(fn {key, val} ->
+          Task.async(fn ->
+            client |> Exredis.query(["SET", key, val])
+          end)
         end)
+        |> Enum.each(&Task.await/1)
       end)
-      |> Enum.each(&Task.await/1)
-    end)
 
-    get_time = :timer.tc(fn ->
-      kvs
-      |> Enum.map(fn({key, val}) ->
-        Task.async(fn ->
-          ^val = Exredis.query(client, ["GET", key])
+    get_time =
+      :timer.tc(fn ->
+        kvs
+        |> Enum.map(fn {key, val} ->
+          Task.async(fn ->
+            ^val = Exredis.query(client, ["GET", key])
+          end)
         end)
+        |> Enum.each(&Task.await/1)
       end)
-      |> Enum.each(&Task.await/1)
-    end)
 
     %{:set_time => set_time, :get_time => get_time}
   end
@@ -107,18 +114,18 @@ defmodule Remixdb.BM.String do
   defp print_results(results, num_elms) do
     num_runs = Enum.count(results)
 
-    max_get = get_results results, :get_time, :max
-    min_get = get_results results, :get_time, :min
-    get_sum = get_results results, :get_time, :sum
-    avg_get = (get_sum * 1.0) / num_runs
+    max_get = get_results(results, :get_time, :max)
+    min_get = get_results(results, :get_time, :min)
+    get_sum = get_results(results, :get_time, :sum)
+    avg_get = get_sum * 1.0 / num_runs
 
-    max_set = get_results results, :set_time, :max
-    min_set = get_results results, :set_time, :min
-    set_sum = get_results results, :set_time, :sum
-    avg_set = (set_sum * 1.0) / num_runs
+    max_set = get_results(results, :set_time, :max)
+    min_set = get_results(results, :set_time, :min)
+    set_sum = get_results(results, :set_time, :sum)
+    avg_set = set_sum * 1.0 / num_runs
 
-    num_runs = results |> Enum.count
-    sep = 1..50 |> Enum.map(fn(_) -> "=" end) |> Enum.join
+    num_runs = results |> Enum.count()
+    sep = String.duplicate("=", 50)
 
     str = """
     ~n~n~s~nnum_runs: ~p
@@ -135,23 +142,38 @@ defmodule Remixdb.BM.String do
     avg: ~p
     ~s
     """
-    :io.format(str, [sep, num_runs, self(), num_elms, min_get, max_get, avg_get, min_set, max_set, avg_set, sep])
+
+    :io.format(str, [
+      sep,
+      num_runs,
+      self(),
+      num_elms,
+      min_get,
+      max_get,
+      avg_get,
+      min_set,
+      max_set,
+      avg_set,
+      sep
+    ])
   end
 
   defp get_results(results, map_key, enum_func) do
-    res = results |>
-      Enum.map(fn(cc) ->
+    res =
+      results
+      |> Enum.map(fn cc ->
         {res, :ok} = Map.get(cc, map_key)
         res
       end)
-    :erlang.apply Enum, enum_func, [res]
+
+    :erlang.apply(Enum, enum_func, [res])
   end
 
   defp create_key_vals(num_elms) do
     1..num_elms
-    |> Enum.reduce(Map.new, fn(_, acc) ->
-      key = UUID.uuid4
-      val = UUID.uuid4
+    |> Enum.reduce(Map.new(), fn _, acc ->
+      key = UUID.uuid4()
+      val = UUID.uuid4()
       Map.put(acc, key, val)
     end)
   end
