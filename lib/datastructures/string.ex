@@ -6,63 +6,76 @@ defmodule Remixdb.String do
   @name :remixdb_string
 
   def start_link(_args) do
-    GenServer.start_link(__MODULE__, :ok, name: @name)
+    GenServer.start_link(__MODULE__, :ok)
   end
 
   def init(:ok) do
-    table = :ets.new(@name, [:named_table, :set, :public])
+    rr = :erlang.make_ref() |> :erlang.ref_to_list() |> :erlang.list_to_binary()
+
+    table_name = "remixdb_string::#{rr}" |> String.to_atom()
+    table = :ets.new(table_name, [:named_table, :set, :public])
     {:ok, table}
   end
 
-  def flushall() do
-    GenServer.call(@name, :flushall)
+  def flushall(pid \\ @name) do
+    GenServer.call(pid, :flushall)
   end
 
-  def dbsize() do
-    GenServer.call(@name, :dbsize)
+  def dbsize(pid \\ @name) do
+    GenServer.call(pid, :dbsize)
   end
 
-  def set(key, val) do
-    GenServer.call(@name, {:set, key, val})
+  def set(key, val, pid \\ @name) do
+    GenServer.call(pid, {:set, key, val})
   end
 
-  def getset(key, val) do
-    GenServer.call(@name, {:getset, key, val})
+  def getset(key, val, pid \\ @name) do
+    GenServer.call(pid, {:getset, key, val})
   end
 
-  def get(key) do
-    GenServer.call(@name, {:get, key})
+  def get(key, pid \\ @name) do
+    GenServer.call(pid, {:get, key})
   end
 
-  def rename(old_name, new_name) do
-    GenServer.call(@name, {:rename, old_name, new_name})
+  def rename(old_name, new_name, pid \\ @name) do
+    GenServer.call(pid, {:rename, old_name, new_name})
   end
 
-  def append(key, val) do
-    GenServer.call(@name, {:append, key, val})
+  def append(key, val, pid \\ @name) do
+    GenServer.call(pid, {:append, key, val})
   end
 
-  def incr(key) do
-    GenServer.call(@name, {:incrby, key, 1})
+  def incr(key, pid \\ @name) do
+    GenServer.call(pid, {:incrby, key, 1})
   end
 
-  def incrby(key, vv) do
+  def incrby(key, vv, pid \\ @name) do
     {val, ""} = Integer.parse(vv)
-    GenServer.call(@name, {:incrby, key, val})
+    GenServer.call(pid, {:incrby, key, val})
   end
 
-  def decr(key) do
-    GenServer.call(@name, {:incrby, key, -1})
+  def decr(key, pid \\ @name) do
+    GenServer.call(pid, {:incrby, key, -1})
   end
 
-  def decrby(key, vv) do
+  def decrby(key, vv, pid \\ @name) do
     {val, ""} = Integer.parse(vv)
-    GenServer.call(@name, {:incrby, key, val * -1})
+    GenServer.call(pid, {:incrby, key, val * -1})
+  end
+
+  def delete(key, pid \\ @name) do
+    GenServer.call(pid, {:delete, key})
+  end
+
+  def handle_call({:delete, key}, _from, table) do
+    true = :ets.delete(table, key)
+    {:reply, :ok, table}
   end
 
   def handle_call(:flushall, _from, table) do
+    table_name = :ets.info(table, :name)
     :ets.delete(table)
-    new_table = :ets.new(@name, [:named_table, :set, :public])
+    new_table = :ets.new(table_name, [:named_table, :set, :public])
     {:reply, :ok, new_table}
   end
 
