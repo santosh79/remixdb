@@ -75,10 +75,9 @@ defmodule Remixdb.String do
     old_val = get_val(table, key)
 
     new_val =
-      if old_val == nil do
-        val
-      else
-        <<old_val::binary, val::binary>>
+      case old_val do
+        nil -> val
+        _ -> <<old_val::binary, val::binary>>
       end
 
     sz = new_val |> :erlang.byte_size()
