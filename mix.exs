@@ -2,12 +2,13 @@ defmodule Remixdb.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :remixdb,
-     version: "0.0.3",
-     elixir: "~> 1.14",
-     description: "A caching library written in pure elixir",
-     start_permanent: Mix.env == :prod,
-     deps: deps()
+    [
+      app: :remixdb,
+      version: "0.0.3",
+      elixir: "~> 1.14",
+      description: "A caching library written in pure elixir",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
     ]
   end
 
@@ -32,7 +33,6 @@ defmodule Remixdb.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{ :exredis, ">= 0.2.4" }, { :uuid, "~> 1.1" }]
+    [{:exredis, ">= 0.2.4"}]
   end
 end
-

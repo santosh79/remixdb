@@ -2,9 +2,11 @@ defmodule RemixdbTest do
   defmodule Server do
     use ExUnit.Case
 
+    @host "127.0.0.1"
+
     setup_all _context do
-      client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
-      :timer.sleep 1_000
+      client = Exredis.start_using_connection_string("redis://#{@host}:6379")
+      :timer.sleep(1_000)
       {:ok, %{client: client}}
     end
 
@@ -15,34 +17,34 @@ defmodule RemixdbTest do
     end
 
     test "exists", %{client: client} do
-      non_exist_key = UUID.uuid4
-      key = UUID.uuid4
+      non_exist_key = :erlang.make_ref() |> inspect()
+      key = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["EXISTS", non_exist_key])
       assert val === "0"
 
-      vv = UUID.uuid4
+      vv = :erlang.make_ref() |> inspect()
       client |> Exredis.query(["SET", key, vv])
       val = client |> Exredis.query(["EXISTS", key])
       assert val === "1"
     end
 
     test "set and get", %{client: client} do
-      key = UUID.uuid4
-      vv = UUID.uuid4
+      key = :erlang.make_ref() |> inspect()
+      vv = :erlang.make_ref() |> inspect()
       client |> Exredis.query(["SET", key, vv])
       val = client |> Exredis.query(["GET", key])
       assert val === vv
     end
 
     test "getset", %{client: client} do
-      key = UUID.uuid4
-      vv = UUID.uuid4
+      key = :erlang.make_ref() |> inspect()
+      vv = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["GETSET", key, vv])
       assert val === :undefined
 
-      vv_n = UUID.uuid4
+      vv_n = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["GETSET", key, vv_n])
       assert val === vv
 
@@ -51,35 +53,41 @@ defmodule RemixdbTest do
     end
 
     test "get non-existent key", %{client: client} do
-      non_exist_key = UUID.uuid4
+      non_exist_key = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["GET", non_exist_key])
       assert val === :undefined
     end
 
     test "dbsize", %{client: client} do
-      prev_db_size = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
-      1..1_000 |> Enum.each(fn(_x) ->
-        val = key = UUID.uuid4
+      prev_db_size = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+
+      1..1_000
+      |> Enum.each(fn _x ->
+        val = key = :erlang.make_ref() |> inspect()
         client |> Exredis.query(["SET", key, val])
       end)
-      1..1_000 |> Enum.each(fn(_x) ->
-        val = key = UUID.uuid4
+
+      1..1_000
+      |> Enum.each(fn _x ->
+        val = key = :erlang.make_ref() |> inspect()
         client |> Exredis.query(["LPUSH", key, val])
       end)
 
-      1..1_000 |> Enum.each(fn(_x) ->
-        val = key = UUID.uuid4
-        hash_name = UUID.uuid4
+      1..1_000
+      |> Enum.each(fn _x ->
+        val = key = :erlang.make_ref() |> inspect()
+        hash_name = :erlang.make_ref() |> inspect()
         client |> Exredis.query(["HSET", hash_name, key, val])
       end)
 
-      1..1_000 |> Enum.each(fn(_x) ->
-        val = set_name = UUID.uuid4
+      1..1_000
+      |> Enum.each(fn _x ->
+        val = set_name = :erlang.make_ref() |> inspect()
         client |> Exredis.query(["SADD", set_name, val])
       end)
 
-      val = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
-      assert val === (prev_db_size + 4_000)
+      val = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+      assert val === prev_db_size + 4_000
     end
 
     test "ping", %{client: client} do
@@ -90,18 +98,18 @@ defmodule RemixdbTest do
     end
 
     test "append - NON existing key", %{client: client} do
-      key = UUID.uuid4
-      vv = UUID.uuid4
+      key = :erlang.make_ref() |> inspect()
+      vv = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["APPEND", key, vv])
-      assert val === (vv |> String.length) |> Integer.to_string
+      assert val === vv |> String.length() |> Integer.to_string()
 
       val = client |> Exredis.query(["GET", key])
       assert val === vv
     end
 
     test "INCR", %{client: client} do
-      counter = UUID.uuid4
+      counter = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["INCR", counter])
       assert val === "1"
 
@@ -110,7 +118,7 @@ defmodule RemixdbTest do
     end
 
     test "INCRBY", %{client: client} do
-      counter = UUID.uuid4
+      counter = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["INCRBY", counter, 5])
       assert val === "5"
 
@@ -119,7 +127,7 @@ defmodule RemixdbTest do
     end
 
     test "DECR", %{client: client} do
-      counter = UUID.uuid4
+      counter = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["DECR", counter])
       assert val === "-1"
 
@@ -130,7 +138,7 @@ defmodule RemixdbTest do
     end
 
     test "DECRBY", %{client: client} do
-      counter = UUID.uuid4
+      counter = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["DECRBY", counter, 5])
       assert val === "-5"
 
@@ -140,7 +148,7 @@ defmodule RemixdbTest do
     end
 
     test "append - existing key", %{client: client} do
-      mykey = UUID.uuid4
+      mykey = :erlang.make_ref() |> inspect()
       client |> Exredis.query(["SET", mykey, "hello"])
       val = client |> Exredis.query(["APPEND", mykey, " world"])
       assert val === "11"
@@ -161,7 +169,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["GET", "mykey"])
       assert val === "hello"
 
-      :timer.sleep 1_500
+      :timer.sleep(1_500)
       val = client |> Exredis.query(["GET", "mykey"])
       assert val === :undefined
 
@@ -171,13 +179,13 @@ defmodule RemixdbTest do
 
     @tag current: true
     test "RENAME", %{client: client} do
-      kk = UUID.uuid4
-      vv = UUID.uuid4
+      kk = :erlang.make_ref() |> inspect()
+      vv = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["SET", kk, vv])
       assert val === "OK"
 
-      new_kk = UUID.uuid4
+      new_kk = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["RENAME", kk, new_kk])
       assert val === "OK"
 
@@ -187,9 +195,8 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["GET", new_kk])
       assert val === vv
 
-
-      unknown_key = UUID.uuid4
-      val = client |> Exredis.query(["RENAME", unknown_key, UUID.uuid4])
+      unknown_key = :erlang.make_ref() |> inspect()
+      val = client |> Exredis.query(["RENAME", unknown_key, :erlang.make_ref() |> inspect()])
       assert val === "ERR no such key"
     end
 
@@ -224,9 +231,11 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LPOP", "mylist"])
       assert val === "one"
 
-      (1..4) |> Enum.each(fn(_x) ->
+      1..4
+      |> Enum.each(fn _x ->
         client |> Exredis.query(["LPOP", "mylist"])
       end)
+
       val = client |> Exredis.query(["LPOP", "mylist"])
       assert val === :undefined
 
@@ -235,7 +244,7 @@ defmodule RemixdbTest do
     end
 
     test "LRANGE", %{client: client} do
-      mylist = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
       client |> Exredis.query(["RPUSH", mylist, "one"])
       client |> Exredis.query(["RPUSH", mylist, "two"])
       client |> Exredis.query(["RPUSH", mylist, "three"])
@@ -258,14 +267,14 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LRANGE", mylist, -100, 0])
       assert val === ["one"]
 
-      unknown_list = UUID.uuid4
+      unknown_list = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["LRANGE", unknown_list, 5, 10])
       assert val === []
     end
 
     test "LPUSHX & RPUSHX", %{client: client} do
-      mylist = UUID.uuid4
-      unknown_list = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
+      unknown_list = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["LPUSH", mylist, "world"])
       assert val === "1"
@@ -293,13 +302,13 @@ defmodule RemixdbTest do
     end
 
     test "LPOP, RPUSH & LLEN", %{client: client} do
-      mylist = UUID.uuid4
-      unknown_list = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
+      unknown_list = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["LLEN", mylist])
       assert val === "0"
 
-      val = client |> Exredis.query(["RPUSH", mylist, "one",  "two"])
+      val = client |> Exredis.query(["RPUSH", mylist, "one", "two"])
       assert val === "2"
       val = client |> Exredis.query(["RPUSH", mylist, "three"])
       assert val === "3"
@@ -324,11 +333,12 @@ defmodule RemixdbTest do
     end
 
     test "RPOPLPUSH", %{client: client} do
-      mylist = UUID.uuid4
-      unknown_list = UUID.uuid4
-      myotherlist = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
+      unknown_list = :erlang.make_ref() |> inspect()
+      myotherlist = :erlang.make_ref() |> inspect()
 
-      ["one", "two", "three"] |> Enum.each(fn(el) ->
+      ["one", "two", "three"]
+      |> Enum.each(fn el ->
         client |> Exredis.query(["RPUSH", mylist, el])
       end)
 
@@ -349,9 +359,10 @@ defmodule RemixdbTest do
     end
 
     test "LTRIM", %{client: client} do
-      mylist = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
 
-      ["one", "two", "three"] |> Enum.each(fn(el) ->
+      ["one", "two", "three"]
+      |> Enum.each(fn el ->
         client |> Exredis.query(["RPUSH", mylist, el])
       end)
 
@@ -363,7 +374,7 @@ defmodule RemixdbTest do
     end
 
     test "LINDEX", %{client: client} do
-      mylist = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["LPUSH", mylist, "World"])
       client |> Exredis.query(["LPUSH", mylist, "Hello"])
@@ -379,9 +390,10 @@ defmodule RemixdbTest do
     end
 
     test "LSET", %{client: client} do
-      mylist = UUID.uuid4
+      mylist = :erlang.make_ref() |> inspect()
 
-      ["one", "two", "three"] |> Enum.each(fn(el) ->
+      ["one", "two", "three"]
+      |> Enum.each(fn el ->
         client |> Exredis.query(["RPUSH", mylist, el])
       end)
 
@@ -400,9 +412,9 @@ defmodule RemixdbTest do
     # SETS
     ##
     test "SADD, SCARD, SISMEMBER & SMEMBERS", %{client: client} do
-      myset = UUID.uuid4
-      unknown_set = UUID.uuid4
-      
+      myset = :erlang.make_ref() |> inspect()
+      unknown_set = :erlang.make_ref() |> inspect()
+
       val = client |> Exredis.query(["SADD", myset, "Hello"])
       assert val === "1"
 
@@ -413,7 +425,7 @@ defmodule RemixdbTest do
       assert val === "0"
 
       val = client |> Exredis.query(["SMEMBERS", myset])
-      assert (val |> Enum.sort) === (["Hello", "World"] |> Enum.sort)
+      assert val |> Enum.sort() === ["Hello", "World"] |> Enum.sort()
 
       val = client |> Exredis.query(["SISMEMBER", myset, "World"])
       assert val === "1"
@@ -433,17 +445,17 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SISMEMBER", unknown_set, "something"])
       assert val === "0"
 
-      full_list =  ["a", "b", "c", "d"] 
-      _full_set = full_list |> MapSet.new
-      new_set = UUID.uuid4
+      full_list = ["a", "b", "c", "d"]
+      _full_set = full_list |> MapSet.new()
+      new_set = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["SADD", new_set] ++ full_list)
       assert val === "4"
     end
 
     test "SMISMEMBER", %{client: client} do
-      key = UUID.uuid4
-      val1 = UUID.uuid4
-      val2 = UUID.uuid4
+      key = :erlang.make_ref() |> inspect()
+      val1 = :erlang.make_ref() |> inspect()
+      val2 = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["SADD", key, val1])
       assert val === "1"
@@ -453,9 +465,9 @@ defmodule RemixdbTest do
     end
 
     test "SUNION", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
 
@@ -465,15 +477,15 @@ defmodule RemixdbTest do
       client |> Exredis.query(["SADD", key3, "c"])
       client |> Exredis.query(["SADD", key3, "e"])
 
-      unknown_key = UUID.uuid4
+      unknown_key = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["SUNION", key1, key2, key3, unknown_key])
-      assert (val |> Enum.sort) === (["a", "b", "c", "d", "e"] |> Enum.sort)
+      assert val |> Enum.sort() === ["a", "b", "c", "d", "e"] |> Enum.sort()
     end
 
     test "SINTER", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
 
@@ -486,15 +498,15 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["SINTER", key1, key2, key3])
       assert val === ["c"]
 
-      unknown_set = UUID.uuid4
+      unknown_set = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["SINTER", unknown_set, key2, key3])
       assert val === []
     end
 
     test "SDIFF", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
 
@@ -504,27 +516,27 @@ defmodule RemixdbTest do
       client |> Exredis.query(["SADD", key3, "c"])
       client |> Exredis.query(["SADD", key3, "e"])
 
-      unknown_key = UUID.uuid4
+      unknown_key = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["SDIFF", key1, key2, key3, unknown_key])
-      assert (val |> Enum.sort) === (["b", "d"] |> Enum.sort)
+      assert val |> Enum.sort() === ["b", "d"] |> Enum.sort()
     end
 
     test "SRANDMEMBER", %{client: client} do
-      key1 = UUID.uuid4
-      unknown_set = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      unknown_set = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
 
       val = client |> Exredis.query(["SRANDMEMBER", key1])
-      assert (["a", "b", "c", "d"] |> MapSet.new |> MapSet.member?(val))
+      assert ["a", "b", "c", "d"] |> MapSet.new() |> MapSet.member?(val)
 
       val = client |> Exredis.query(["SRANDMEMBER", unknown_set])
       assert val === :undefined
     end
 
     test "SMOVE", %{client: client} do
-      set1 = UUID.uuid4
-      set2 = UUID.uuid4
+      set1 = :erlang.make_ref() |> inspect()
+      set2 = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", set1, "a"])
       client |> Exredis.query(["SADD", set1, "b"])
@@ -564,8 +576,8 @@ defmodule RemixdbTest do
     end
 
     test "SREM", %{client: client} do
-      key1 = UUID.uuid4
-      unknown_set = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      unknown_set = :erlang.make_ref() |> inspect()
 
       full_list = ["a", "b", "c", "d"]
       client |> Exredis.query(["SADD", key1] ++ full_list)
@@ -589,22 +601,22 @@ defmodule RemixdbTest do
     end
 
     test "SPOP", %{client: client} do
-      key1 = UUID.uuid4()
-      key2 = UUID.uuid4()
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
 
       full_list = ["a", "b", "c", "d"]
-      full_set =  full_list |> MapSet.new
+      full_set = full_list |> MapSet.new()
       client |> Exredis.query(["SADD", key1] ++ full_list)
 
       val = client |> Exredis.query(["SPOP", key1])
-      assert (full_set |> MapSet.new |> MapSet.member?(val))
-      val_set = [val] |> MapSet.new
+      assert full_set |> MapSet.new() |> MapSet.member?(val)
+      val_set = [val] |> MapSet.new()
 
       val = client |> Exredis.query(["SISMEMBER", key1, val])
       assert val === "0"
 
-      members =  client |> Exredis.query(["SMEMBERS", key1])
-      assert (full_set |> MapSet.difference(val_set) |> Enum.sort) === (members |> Enum.sort)
+      members = client |> Exredis.query(["SMEMBERS", key1])
+      assert full_set |> MapSet.difference(val_set) |> Enum.sort() === members |> Enum.sort()
 
       val = client |> Exredis.query(["SPOP", "unknown_set"])
       assert val === :undefined
@@ -619,13 +631,13 @@ defmodule RemixdbTest do
     end
 
     test "SINTERSTORE", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
-      key4 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
+      key4 = :erlang.make_ref() |> inspect()
 
-      full_list =  ["a", "b", "c", "d"] 
-      _full_set = full_list |> MapSet.new
+      full_list = ["a", "b", "c", "d"]
+      _full_set = full_list |> MapSet.new()
       client |> Exredis.query(["SADD", key1] ++ full_list)
 
       client |> Exredis.query(["SADD", key2, "c"])
@@ -639,7 +651,7 @@ defmodule RemixdbTest do
       assert val === ["c"]
 
       # SantoshTODO
-      #Overwrites an existing key
+      # Overwrites an existing key
       # client |> Exredis.query(["SET", "mykey", "hello"])
       # client |> Exredis.query(["SINTERSTORE", "mykey", "key1", "key2", "key3"])
       # val = client |> Exredis.query(["SMEMBERS", "mykey"])
@@ -653,13 +665,13 @@ defmodule RemixdbTest do
     end
 
     test "SUNIONSTORE", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
-      key4 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
+      key4 = :erlang.make_ref() |> inspect()
 
-      full_list =  ["a", "b", "c", "d"] 
-      _full_set = full_list |> MapSet.new
+      full_list = ["a", "b", "c", "d"]
+      _full_set = full_list |> MapSet.new()
       client |> Exredis.query(["SADD", key1] ++ full_list)
 
       client |> Exredis.query(["SADD", key2, "c"])
@@ -670,10 +682,10 @@ defmodule RemixdbTest do
       assert val === "5"
 
       val = client |> Exredis.query(["SMEMBERS", key4])
-      assert (val |> Enum.sort) === (["a", "b", "c", "d", "e"] |> Enum.sort)
+      assert val |> Enum.sort() === ["a", "b", "c", "d", "e"] |> Enum.sort()
 
       # SantoshTODO
-      #Overwrites an existing key
+      # Overwrites an existing key
       # client |> Exredis.query(["SET", "mykey", "hello"])
       # client |> Exredis.query(["SUNIONSTORE", "mykey", "key1", "key2", "key3"])
       # val = client |> Exredis.query(["SMEMBERS", "mykey"])
@@ -687,9 +699,9 @@ defmodule RemixdbTest do
     end
 
     test "SDIFFSTORE", %{client: client} do
-      key1 = UUID.uuid4
-      key2 = UUID.uuid4
-      key3 = UUID.uuid4
+      key1 = :erlang.make_ref() |> inspect()
+      key2 = :erlang.make_ref() |> inspect()
+      key3 = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
 
@@ -699,12 +711,12 @@ defmodule RemixdbTest do
       client |> Exredis.query(["SADD", key3, "c"])
       client |> Exredis.query(["SADD", key3, "e"])
 
-      key = UUID.uuid4
+      key = :erlang.make_ref() |> inspect()
       val = client |> Exredis.query(["SDIFFSTORE", key, key1, key2, key3])
       assert val === "2"
 
       val = client |> Exredis.query(["SMEMBERS", key])
-      assert (val |> Enum.sort) === (["b", "d"] |> Enum.sort)
+      assert val |> Enum.sort() === ["b", "d"] |> Enum.sort()
 
       # SantoshTODO
       # #Overwrites an existing key
@@ -720,9 +732,11 @@ defmodule RemixdbTest do
       # assert val === "0"
     end
 
-    test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL, HGETALL, HSTRLEN, HSETNX, HINCRBY", %{client: client} do
-      my_hash = UUID.uuid4
-      unknown_hash = UUID.uuid4
+    test "HSET, HGET, HLEN, HEXISTS, HKEYS, HVALS, HDEL, HGETALL, HSTRLEN, HSETNX, HINCRBY", %{
+      client: client
+    } do
+      my_hash = :erlang.make_ref() |> inspect()
+      unknown_hash = :erlang.make_ref() |> inspect()
 
       val = client |> Exredis.query(["HSET", my_hash, "name", "john"])
       assert val === "1"
@@ -734,7 +748,7 @@ defmodule RemixdbTest do
       assert val === "2"
 
       val = client |> Exredis.query(["HGETALL", my_hash])
-      assert (val |> Enum.sort) === (["name", "john", "age", "30"] |> Enum.sort)
+      assert val |> Enum.sort() === ["name", "john", "age", "30"] |> Enum.sort()
 
       val = client |> Exredis.query(["HGET", my_hash, "name"])
       assert val === "john"
@@ -742,7 +756,7 @@ defmodule RemixdbTest do
       assert val === :undefined
 
       val = client |> Exredis.query(["HKEYS", my_hash])
-      assert (val |> Enum.sort) === (["name", "age"] |> Enum.sort)
+      assert val |> Enum.sort() === ["name", "age"] |> Enum.sort()
 
       val = client |> Exredis.query(["HEXISTS", my_hash, "name"])
       assert val === "1"
@@ -755,11 +769,13 @@ defmodule RemixdbTest do
       assert val === []
 
       val = client |> Exredis.query(["HVALS", my_hash])
-      assert (val |> Enum.sort) === (["john", "30"] |> Enum.sort)
+      assert val |> Enum.sort() === ["john", "30"] |> Enum.sort()
       val = client |> Exredis.query(["HVALS", unknown_hash])
       assert val === []
 
-      val = client |> Exredis.query(["HMSET", my_hash, "city", "SF", "state", "CA", "name", "john"])
+      val =
+        client |> Exredis.query(["HMSET", my_hash, "city", "SF", "state", "CA", "name", "john"])
+
       assert val === "OK"
       val = client |> Exredis.query(["HGET", my_hash, "city"])
       assert val === "SF"
@@ -771,7 +787,7 @@ defmodule RemixdbTest do
       assert val === [:undefined, :undefined]
 
       val = client |> Exredis.query(["HSTRLEN", my_hash, "name"])
-      assert val === ("john" |> String.length |> Integer.to_string)
+      assert val === "john" |> String.length() |> Integer.to_string()
       val = client |> Exredis.query(["HSTRLEN", unknown_hash, "name"])
       assert val === "0"
       val = client |> Exredis.query(["HSTRLEN", my_hash, "unknown_set"])
@@ -810,7 +826,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["TTL", "mykey"])
       assert val === "1"
 
-      :timer.sleep 1_200
+      :timer.sleep(1_200)
       val = client |> Exredis.query(["TTL", "mykey"])
       assert val === "-2"
 
@@ -832,7 +848,7 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["TTL", "mykey"])
       assert val === "-1"
 
-      :timer.sleep 1_200
+      :timer.sleep(1_200)
       val = client |> Exredis.query(["GET", "mykey"])
       assert val === "hello"
 
@@ -845,15 +861,14 @@ defmodule RemixdbTest do
 
     test "flushall", %{client: client} do
       client |> Exredis.query(["SET", "A", "1"])
-      db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
+      db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
       assert db_sz > 0
 
       val = client |> Exredis.query(["FLUSHALL"])
       assert val === "OK"
-      new_db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer
+      new_db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
       assert new_db_sz === 0
       # assert val === (prev_db_size + 2)
     end
   end
 end
-

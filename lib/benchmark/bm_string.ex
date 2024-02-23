@@ -1,6 +1,8 @@
 defmodule Remixdb.BM.String do
   use GenServer
 
+  @host "127.0.0.1"
+
   def start_link([]) do
     GenServer.start_link(__MODULE__, %{})
   end
@@ -46,7 +48,7 @@ defmodule Remixdb.BM.String do
   end
 
   def handle_info(:long_init, state) do
-    client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+    client = Exredis.start_using_connection_string("redis://#{@host}:6379")
     :timer.sleep(1_000)
     updated_state = state |> Map.put(:client, client)
     {:noreply, updated_state}
@@ -172,8 +174,8 @@ defmodule Remixdb.BM.String do
   defp create_key_vals(num_elms) do
     1..num_elms
     |> Enum.reduce(Map.new(), fn _, acc ->
-      key = UUID.uuid4()
-      val = UUID.uuid4()
+      key = :erlang.make_ref() |> inspect()
+      val = :erlang.make_ref() |> inspect()
       Map.put(acc, key, val)
     end)
   end
