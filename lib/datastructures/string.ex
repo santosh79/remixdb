@@ -10,7 +10,7 @@ defmodule Remixdb.String do
   end
 
   def init(:ok) do
-    table = :ets.new(@name, [:named_table, :set, :public])
+    table = :ets.new(@name, [:set, :private, {:write_concurrency, :auto}])
     {:ok, table}
   end
 
