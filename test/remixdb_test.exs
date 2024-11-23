@@ -324,9 +324,8 @@ defmodule RemixdbTest do
       val = client |> Exredis.query(["LPOP", mylist])
       assert val === :undefined
 
-      # SantoshTODO
-      # val = client |> Exredis.query(["EXISTS", mylist])
-      # assert val === "0"
+      val = client |> Exredis.query(["EXISTS", mylist])
+      assert val === "0"
 
       val = client |> Exredis.query(["LPOP", unknown_list])
       assert val === :undefined
@@ -537,6 +536,7 @@ defmodule RemixdbTest do
     test "SMOVE", %{client: client} do
       set1 = :erlang.make_ref() |> inspect()
       set2 = :erlang.make_ref() |> inspect()
+      unknown_set = :erlang.make_ref() |> inspect()
 
       client |> Exredis.query(["SADD", set1, "a"])
       client |> Exredis.query(["SADD", set1, "b"])
@@ -556,9 +556,18 @@ defmodule RemixdbTest do
       assert val === "1"
 
       # SantoshTODO
+      val = client |> Exredis.query(["SMOVE", set1, set2, "b"])
+      assert val === "1"
+
+      val = client |> Exredis.query(["SCARD", set1])
+      assert val === "0"
+
+      val = client |> Exredis.query(["EXISTS", "set1"])
+      assert val === "0"
+
       # val = client |> Exredis.query(["EXISTS", "key2"])
       # assert val === "0"
-
+      #
       # val = client |> Exredis.query(["SMOVE", "key1", "key2", "a"])
       # assert val === "1"
 
@@ -568,8 +577,8 @@ defmodule RemixdbTest do
       # val = client |> Exredis.query(["SMOVE", "key1", "key2", "a"])
       # assert val === "0"
 
-      # val = client |> Exredis.query(["SMOVE", "unknown_set", "key2", "a"])
-      # assert val === "0"
+      val = client |> Exredis.query(["SMOVE", unknown_set, set2, "a"])
+      assert val === "0"
 
       # val = client |> Exredis.query(["EXISTS", "key1"])
       # assert val === "0"
