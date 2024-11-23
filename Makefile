@@ -25,8 +25,10 @@ test: clean
 concatenate:
 	@echo "Concatenating project files..."
 	@files=$$(find lib test -name '*.ex' -o -name '*.exs' -o -name 'mix.exs'); \
+	files="mix.exs $$files"; \
 	echo "" > concatenated_project_files.ex; \
 	for file in $$files; do \
+		echo "Processing: $$file"; \
 		echo "# File: $$file" >> concatenated_project_files.ex; \
 		echo "" >> concatenated_project_files.ex; \
 		cat $$file >> concatenated_project_files.ex; \
