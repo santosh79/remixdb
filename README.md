@@ -1,6 +1,5 @@
 Remixdb
 =======
-[![Build Status](https://travis-ci.org/santosh79/remixdb.svg?branch=master)](https://travis-ci.org/santosh79/remixdb)
 
 ## A Redis Protocol Compliant NoSQL database targeting Concurrency
 RemixDB is a distributed NoSQL database, that implements the [Redis](http://redis.io) protocol, built on the legendary Erlang VM. It aims for matching all of the performance of Redis while leveraging all of the good Systems Tooling of the BEAM VM - High Availability and High Throughput.
