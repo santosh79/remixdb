@@ -1,8 +1,11 @@
 defmodule Remixdb.Benchmark.Parsers do
 
+  @host ~c"0.0.0.0"
+  @port 6379
+
   def redis_parser_bm(num_items \\ 1_000, num_workers \\ 50) do
     :timer.sleep 1_000
-    client = Exredis.start_using_connection_string("redis://127.0.0.1:6379")
+    {:ok, client} = :eredis.start_link(@host, @port)
     :timer.sleep 1_000
     keys_and_vals = 1..num_items
                     |> Enum.map(&( {"key: #{&1}", "val: #{&1}"} ))
@@ -47,7 +50,7 @@ defmodule Remixdb.Benchmark.Parsers do
 
     end)
 
-    :ok = client |> Exredis.stop()
+    :ok = client |> :eredis.stop()
 
     :io.format("~n~n ~p with num_items: ~p and num_workers ~p, result, set -- ~p, get -- ~p ~n~n", [__MODULE__, num_items, num_workers, set_result, get_result])
     :timer.sleep(:timer.seconds(2))
@@ -56,11 +59,11 @@ defmodule Remixdb.Benchmark.Parsers do
 
 
   def set_task(client, k, v) do
-    "OK" = client |> Exredis.query(["SET", k, v])
+    {:ok, "OK"} = client |> :eredis.q(["SET", k, v])
   end
 
   def get_task(client, k, v) do
-    client |> Exredis.query(["SET", k, v])
+    client |> :eredis.q(["SET", k, v])
   end
 end
 

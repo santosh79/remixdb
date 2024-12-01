@@ -1,7 +1,8 @@
 defmodule Remixdb.BM.String do
   use GenServer
 
-  @host "127.0.0.1"
+  @host ~c"0.0.0.0"
+  @port 6379
 
   def start_link([]) do
     GenServer.start_link(__MODULE__, %{})
@@ -48,7 +49,7 @@ defmodule Remixdb.BM.String do
   end
 
   def handle_info(:long_init, state) do
-    client = Exredis.start_using_connection_string("redis://#{@host}:6379")
+    {:ok, client} = :eredis.start_link(@host, @port)
     :timer.sleep(1_000)
     updated_state = state |> Map.put(:client, client)
     {:noreply, updated_state}
@@ -59,7 +60,7 @@ defmodule Remixdb.BM.String do
   end
 
   def handle_cast({:stop, num_elms}, %{client: client, results: res} = state) do
-    :ok = client |> Exredis.stop()
+    :ok = client |> :eredis.stop()
     :timer.sleep(300)
     print_results(res, num_elms)
     {:stop, :normal, state}
@@ -93,7 +94,7 @@ defmodule Remixdb.BM.String do
         kvs
         |> Enum.map(fn {key, val} ->
           Task.async(fn ->
-            client |> Exredis.query(["SET", key, val])
+            :ok = client |> :eredis.q(["SET", key, val])
           end)
         end)
         |> Enum.each(&Task.await/1)
@@ -104,7 +105,7 @@ defmodule Remixdb.BM.String do
         kvs
         |> Enum.map(fn {key, val} ->
           Task.async(fn ->
-            ^val = Exredis.query(client, ["GET", key])
+            {:ok, ^val} = :eredis.q(client, ["GET", key])
           end)
         end)
         |> Enum.each(&Task.await/1)

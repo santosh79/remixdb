@@ -2,10 +2,11 @@ defmodule RemixdbTest do
   defmodule Server do
     use ExUnit.Case
 
-    @host '0.0.0.0'
+    @host ~c"0.0.0.0"
+    @port 6379
 
     setup_all _context do
-      {:ok, client} = :eredis.start_link(@host, 6379)
+      {:ok, client} = :eredis.start_link(@host, @port)
       :timer.sleep(1_000)
       {:ok, %{client: client}}
     end

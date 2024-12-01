@@ -1,8 +1,13 @@
 defmodule Remixdb.Benchmark do
-  def get_and_set(num_elms \\ 1_000, num_clients \\ 50, host \\ "127.0.0.1", port \\ "6379") do
+
+  @host ~c"0.0.0.0"
+  @port 6379
+
+  def get_and_set(num_elms \\ 1_000, num_clients \\ 50) do
     clients = 1..num_clients
               |> Enum.map(fn(_) ->
-                Exredis.start_using_connection_string("redis://#{host}:#{port}")
+                {:ok, client} = :eredis.start_link(@host, @port)
+                client
               end)
     :timer.sleep 1_000
 
@@ -12,7 +17,8 @@ defmodule Remixdb.Benchmark do
         Task.async(fn ->
           idx = rem(x, num_clients)
           client = clients |> Enum.at(idx)
-          client |> Exredis.query(["SET", "FOO-#{x}", "BARNED-#{x}"])
+          {:ok, val} = client |> :eredis.q(["SET", "FOO-#{x}", "BARNED-#{x}"])
+          val
         end)
       end)
       |> Enum.each(&Task.await/1)
@@ -26,7 +32,7 @@ defmodule Remixdb.Benchmark do
           val = "BARNED-#{x}"
           idx = rem(x, num_clients)
           client = clients |> Enum.at(idx)
-          ^val = Exredis.query(client, ["GET", "FOO-#{x}"])
+          {:ok, ^val} = :eredis.q(client, ["GET", "FOO-#{x}"])
         end)
       end)
       |> Enum.each(&Task.await/1)
