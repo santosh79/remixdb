@@ -48,9 +48,9 @@ defmodule Remixdb.List do
   ## Returns
     - `{:ok, pid}` on success.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.start_link(:ok)
+      iex> Remixdb.List.start_link(:ok)
   """
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
@@ -66,9 +66,9 @@ defmodule Remixdb.List do
   ## Returns
     - `:ok` on success.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.flushall()
+      iex> Remixdb.List.flushall()
       :ok
   """
   def flushall() do
@@ -81,9 +81,9 @@ defmodule Remixdb.List do
   ## Returns
     - The size of the database as an integer.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.dbsize()
+      iex> Remixdb.List.dbsize()
       2
   """
   def dbsize() do
@@ -99,9 +99,9 @@ defmodule Remixdb.List do
   ## Returns
     - The number of elements in the list.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.llen("mylist")
+      iex> Remixdb.List.llen("mylist")
       3
   """
   def llen(list_name) do
@@ -119,9 +119,9 @@ defmodule Remixdb.List do
   ## Returns
     - A list of elements in the specified range.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lrange("mylist", 0, -1)
+      iex> Remixdb.List.lrange("mylist", 0, -1)
       ["a", "b", "c"]
   """
   def lrange(list_name, start, stop) do
@@ -139,9 +139,9 @@ defmodule Remixdb.List do
   ## Returns
     - `:ok` on success.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.ltrim("mylist", 0, 1)
+      iex> Remixdb.List.ltrim("mylist", 0, 1)
       :ok
   """
   def ltrim(list_name, start, stop) do
@@ -160,9 +160,9 @@ defmodule Remixdb.List do
     - `:ok` on success.
     - `{:error, "ERR index out of range"}` if the index is invalid.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lset("mylist", 1, "new_value")
+      iex> Remixdb.List.lset("mylist", 1, "new_value")
       :ok
   """
   def lset(list_name, idx, val) when is_integer(idx) do
@@ -179,9 +179,9 @@ defmodule Remixdb.List do
   ## Returns
     - The value at the specified index, or `nil` if the index is invalid.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lindex("mylist", 1)
+      iex> Remixdb.List.lindex("mylist", 1)
       "b"
   """
   def lindex(list_name, idx) when is_integer(idx) do
@@ -203,9 +203,9 @@ defmodule Remixdb.List do
   ## Returns
     - The new length of the list.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.rpush("mylist", ["d", "e"])
+      iex> Remixdb.List.rpush("mylist", ["d", "e"])
       5
   """
   def rpush(list_name, items) do
@@ -222,9 +222,9 @@ defmodule Remixdb.List do
   ## Returns
     - The new length of the list, or `0` if the list does not exist.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.rpushx("mylist", ["f"])
+      iex> Remixdb.List.rpushx("mylist", ["f"])
       6
   """
   def rpushx(list_name, items) do
@@ -241,9 +241,9 @@ defmodule Remixdb.List do
   ## Returns
     - The new length of the list.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lpush("mylist", ["x", "y"])
+      iex> Remixdb.List.lpush("mylist", ["x", "y"])
       5
   """
   def lpush(list_name, items) do
@@ -260,9 +260,9 @@ defmodule Remixdb.List do
   ## Returns
     - The new length of the list, or `0` if the list does not exist.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lpushx("mylist", ["f"])
+      iex> Remixdb.List.lpushx("mylist", ["f"])
       6
   """
   def lpushx(list_name, items) do
@@ -278,9 +278,9 @@ defmodule Remixdb.List do
   ## Returns
     - The first element of the list, or `nil` if the list is empty.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.lpop("mylist")
+      iex> Remixdb.List.lpop("mylist")
       "a"
   """
   def lpop(list_name) do
@@ -296,9 +296,9 @@ defmodule Remixdb.List do
   ## Returns
   - The last element of the list, or `nil` if the list is empty.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.rpop("mylist")
+      iex> Remixdb.List.rpop("mylist")
       "c"
   """
   def rpop(list_name) do
@@ -315,9 +315,9 @@ defmodule Remixdb.List do
   ## Returns
     - The value moved, or `nil` if the source list is empty.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.rpoplpush("mylist", "anotherlist")
+      iex> Remixdb.List.rpoplpush("mylist", "anotherlist")
       "c"
   """
   def rpoplpush(src, dest) do
@@ -335,9 +335,9 @@ defmodule Remixdb.List do
     - `true` if the rename was successful.
     - `false` if the old name does not exist.
 
-  ## Example
+  ## Example Usage
 
-      Remixdb.List.rename("mylist", "newlist")
+      iex> Remixdb.List.rename("mylist", "newlist")
       true
   """
   def rename(old_name, new_name) do
