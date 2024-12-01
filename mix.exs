@@ -33,6 +33,6 @@ defmodule Remixdb.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{:exredis, ">= 0.2.4"}]
+    [{:eredis, ">= 1.7.1"}]
   end
 end

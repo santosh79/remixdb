@@ -2,17 +2,17 @@ defmodule RemixdbTest do
   defmodule Server do
     use ExUnit.Case
 
-    @host "127.0.0.1"
+    @host '0.0.0.0'
 
     setup_all _context do
-      client = Exredis.start_using_connection_string("redis://#{@host}:6379")
+      {:ok, client} = :eredis.start_link(@host, 6379)
       :timer.sleep(1_000)
       {:ok, %{client: client}}
     end
 
     setup context do
       %{client: client} = context
-      client |> Exredis.query(["FLUSHALL"])
+      {:ok, "OK"} = client |> :eredis.q(["FLUSHALL"])
       {:ok, %{client: client}}
     end
 
@@ -20,20 +20,20 @@ defmodule RemixdbTest do
       non_exist_key = :erlang.make_ref() |> inspect()
       key = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["EXISTS", non_exist_key])
+      {:ok, val} = client |> :eredis.q(["EXISTS", non_exist_key])
       assert val === "0"
 
       vv = :erlang.make_ref() |> inspect()
-      client |> Exredis.query(["SET", key, vv])
-      val = client |> Exredis.query(["EXISTS", key])
+      client |> :eredis.q(["SET", key, vv])
+      {:ok, val} = client |> :eredis.q(["EXISTS", key])
       assert val === "1"
     end
 
     test "set and get", %{client: client} do
       key = :erlang.make_ref() |> inspect()
       vv = :erlang.make_ref() |> inspect()
-      client |> Exredis.query(["SET", key, vv])
-      val = client |> Exredis.query(["GET", key])
+      client |> :eredis.q(["SET", key, vv])
+      {:ok, val} = client |> :eredis.q(["GET", key])
       assert val === vv
     end
 
@@ -41,59 +41,61 @@ defmodule RemixdbTest do
       key = :erlang.make_ref() |> inspect()
       vv = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["GETSET", key, vv])
+      {:ok, val} = client |> :eredis.q(["GETSET", key, vv])
       assert val === :undefined
 
       vv_n = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["GETSET", key, vv_n])
+      {:ok, val} = client |> :eredis.q(["GETSET", key, vv_n])
       assert val === vv
 
-      val = client |> Exredis.query(["GET", key])
+      {:ok, val} = client |> :eredis.q(["GET", key])
       assert val === vv_n
     end
 
     test "get non-existent key", %{client: client} do
       non_exist_key = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["GET", non_exist_key])
+      {:ok, val} = client |> :eredis.q(["GET", non_exist_key])
       assert val === :undefined
     end
 
     test "dbsize", %{client: client} do
-      prev_db_size = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+      {:ok, prev_db_size} = client |> :eredis.q(["DBSIZE"])
+      prev_db_size = prev_db_size |> String.to_integer()
 
       1..1_000
       |> Enum.each(fn _x ->
         val = key = :erlang.make_ref() |> inspect()
-        client |> Exredis.query(["SET", key, val])
+        client |> :eredis.q(["SET", key, val])
       end)
 
       1..1_000
       |> Enum.each(fn _x ->
         val = key = :erlang.make_ref() |> inspect()
-        client |> Exredis.query(["LPUSH", key, val])
+        client |> :eredis.q(["LPUSH", key, val])
       end)
 
       1..1_000
       |> Enum.each(fn _x ->
         val = key = :erlang.make_ref() |> inspect()
         hash_name = :erlang.make_ref() |> inspect()
-        client |> Exredis.query(["HSET", hash_name, key, val])
+        client |> :eredis.q(["HSET", hash_name, key, val])
       end)
 
       1..1_000
       |> Enum.each(fn _x ->
         val = set_name = :erlang.make_ref() |> inspect()
-        client |> Exredis.query(["SADD", set_name, val])
+        client |> :eredis.q(["SADD", set_name, val])
       end)
 
-      val = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+      {:ok, val} = client |> :eredis.q(["DBSIZE"])
+      val =  val |> String.to_integer()
       assert val === prev_db_size + 4_000
     end
 
     test "ping", %{client: client} do
-      val = client |> Exredis.query(["PING"])
+      {:ok, val} = client |> :eredis.q(["PING"])
       assert val === "PONG"
-      val = client |> Exredis.query(["PING", "hello world"])
+      {:ok, val} = client |> :eredis.q(["PING", "hello world"])
       assert val === "hello world"
     end
 
@@ -101,79 +103,79 @@ defmodule RemixdbTest do
       key = :erlang.make_ref() |> inspect()
       vv = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["APPEND", key, vv])
+      {:ok, val} = client |> :eredis.q(["APPEND", key, vv])
       assert val === vv |> String.length() |> Integer.to_string()
 
-      val = client |> Exredis.query(["GET", key])
+      {:ok, val} = client |> :eredis.q(["GET", key])
       assert val === vv
     end
 
     test "INCR", %{client: client} do
       counter = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["INCR", counter])
+      {:ok, val} = client |> :eredis.q(["INCR", counter])
       assert val === "1"
 
-      val = client |> Exredis.query(["INCR", counter])
+      {:ok, val} = client |> :eredis.q(["INCR", counter])
       assert val === "2"
     end
 
     test "INCRBY", %{client: client} do
       counter = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["INCRBY", counter, 5])
+      {:ok, val} = client |> :eredis.q(["INCRBY", counter, 5])
       assert val === "5"
 
-      val = client |> Exredis.query(["INCRBY", counter, 10])
+      {:ok, val} = client |> :eredis.q(["INCRBY", counter, 10])
       assert val === "15"
     end
 
     test "DECR", %{client: client} do
       counter = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["DECR", counter])
+      {:ok, val} = client |> :eredis.q(["DECR", counter])
       assert val === "-1"
 
-      client |> Exredis.query(["INCR", counter])
-      client |> Exredis.query(["INCR", counter])
-      val = client |> Exredis.query(["DECR", counter])
+      client |> :eredis.q(["INCR", counter])
+      client |> :eredis.q(["INCR", counter])
+      {:ok, val} = client |> :eredis.q(["DECR", counter])
       assert val === "0"
     end
 
     test "DECRBY", %{client: client} do
       counter = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["DECRBY", counter, 5])
+      {:ok, val} = client |> :eredis.q(["DECRBY", counter, 5])
       assert val === "-5"
 
-      client |> Exredis.query(["INCRBY", counter, 10])
-      val = client |> Exredis.query(["DECRBY", counter, 5])
+      client |> :eredis.q(["INCRBY", counter, 10])
+      {:ok, val} = client |> :eredis.q(["DECRBY", counter, 5])
       assert val === "0"
     end
 
     test "append - existing key", %{client: client} do
       mykey = :erlang.make_ref() |> inspect()
-      client |> Exredis.query(["SET", mykey, "hello"])
-      val = client |> Exredis.query(["APPEND", mykey, " world"])
+      client |> :eredis.q(["SET", mykey, "hello"])
+      {:ok, val} = client |> :eredis.q(["APPEND", mykey, " world"])
       assert val === "11"
 
-      val = client |> Exredis.query(["GET", mykey])
+      {:ok, val} = client |> :eredis.q(["GET", mykey])
       assert val === "hello world"
     end
 
     # @tag slow: true
     @tag skip: true
     test "SETEX & TTL", %{client: client} do
-      val = client |> Exredis.query(["SETEX", "mykey", 1, "hello"])
+      {:ok, val} = client |> :eredis.q(["SETEX", "mykey", 1, "hello"])
       assert val === "OK"
 
-      val = client |> Exredis.query(["TTL", "mykey"])
+      {:ok, val} = client |> :eredis.q(["TTL", "mykey"])
       assert val === "1"
 
-      val = client |> Exredis.query(["GET", "mykey"])
+      {:ok, val} = client |> :eredis.q(["GET", "mykey"])
       assert val === "hello"
 
       :timer.sleep(1_500)
-      val = client |> Exredis.query(["GET", "mykey"])
+      {:ok, val} = client |> :eredis.q(["GET", "mykey"])
       assert val === :undefined
 
-      val = client |> Exredis.query(["TTL", "mykey"])
+      {:ok, val} = client |> :eredis.q(["TTL", "mykey"])
       assert val === "-2"
     end
 
@@ -182,35 +184,35 @@ defmodule RemixdbTest do
       kk = :erlang.make_ref() |> inspect()
       vv = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["SET", kk, vv])
+      {:ok, val} = client |> :eredis.q(["SET", kk, vv])
       assert val === "OK"
 
       new_kk = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["RENAME", kk, new_kk])
+      {:ok, val} = client |> :eredis.q(["RENAME", kk, new_kk])
       assert val === "OK"
 
-      val = client |> Exredis.query(["GET", kk])
+      {:ok, val} = client |> :eredis.q(["GET", kk])
       assert val === :undefined
 
-      val = client |> Exredis.query(["GET", new_kk])
+      {:ok, val} = client |> :eredis.q(["GET", new_kk])
       assert val === vv
 
       unknown_key = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["RENAME", unknown_key, :erlang.make_ref() |> inspect()])
+      {:ok, val} = client |> :eredis.q(["RENAME", unknown_key, :erlang.make_ref() |> inspect()])
       assert val === "ERR no such key"
     end
 
     @tag skip: true
     test "RENAMENX", %{client: client} do
-      client |> Exredis.query(["SET", "mykey", "hello"])
-      val = client |> Exredis.query(["RENAMENX", "mykey", "foo"])
+      client |> :eredis.q(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
       assert val === "1"
 
-      client |> Exredis.query(["SET", "mykey", "hello"])
-      val = client |> Exredis.query(["RENAMENX", "foo", "mykey"])
+      client |> :eredis.q(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
       assert val === "0"
 
-      val = client |> Exredis.query(["RENAMENX", "unknown_key", "something"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
       assert val === "ERR no such key"
     end
 
@@ -218,57 +220,57 @@ defmodule RemixdbTest do
     # LISTS
     ##
     test "RPOP & LPUSH", %{client: client} do
-      val = client |> Exredis.query(["RPUSH", "mylist", "three", "four", "five", "six"])
+      {:ok, val} = client |> :eredis.q(["RPUSH", "mylist", "three", "four", "five", "six"])
       assert val === "4"
 
-      client |> Exredis.query(["LPUSH", "mylist", "two"])
-      val = client |> Exredis.query(["LPUSH", "mylist", "one"])
+      client |> :eredis.q(["LPUSH", "mylist", "two"])
+      {:ok, val} = client |> :eredis.q(["LPUSH", "mylist", "one"])
       assert val === "6"
 
-      val = client |> Exredis.query(["RPOP", "mylist"])
+      {:ok, val} = client |> :eredis.q(["RPOP", "mylist"])
       assert val === "six"
 
-      val = client |> Exredis.query(["LPOP", "mylist"])
+      {:ok, val} = client |> :eredis.q(["LPOP", "mylist"])
       assert val === "one"
 
       1..4
       |> Enum.each(fn _x ->
-        client |> Exredis.query(["LPOP", "mylist"])
+        client |> :eredis.q(["LPOP", "mylist"])
       end)
 
-      val = client |> Exredis.query(["LPOP", "mylist"])
+      {:ok, val} = client |> :eredis.q(["LPOP", "mylist"])
       assert val === :undefined
 
-      val = client |> Exredis.query(["RPOP", "mylist"])
+      {:ok, val} = client |> :eredis.q(["RPOP", "mylist"])
       assert val === :undefined
     end
 
     test "LRANGE", %{client: client} do
       mylist = :erlang.make_ref() |> inspect()
-      client |> Exredis.query(["RPUSH", mylist, "one"])
-      client |> Exredis.query(["RPUSH", mylist, "two"])
-      client |> Exredis.query(["RPUSH", mylist, "three"])
+      client |> :eredis.q(["RPUSH", mylist, "one"])
+      client |> :eredis.q(["RPUSH", mylist, "two"])
+      client |> :eredis.q(["RPUSH", mylist, "three"])
 
-      val = client |> Exredis.query(["LRANGE", mylist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 0, -1])
       assert val === ["one", "two", "three"]
 
-      val = client |> Exredis.query(["LRANGE", mylist, 0, 0])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 0, 0])
       assert val === ["one"]
 
-      val = client |> Exredis.query(["LRANGE", mylist, -3, -2])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, -3, -2])
       assert val === ["one", "two"]
 
-      val = client |> Exredis.query(["LRANGE", mylist, -100, 100])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, -100, 100])
       assert val === ["one", "two", "three"]
 
-      val = client |> Exredis.query(["LRANGE", mylist, 5, 10])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 5, 10])
       assert val === []
 
-      val = client |> Exredis.query(["LRANGE", mylist, -100, 0])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, -100, 0])
       assert val === ["one"]
 
       unknown_list = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["LRANGE", unknown_list, 5, 10])
+      {:ok, val} = client |> :eredis.q(["LRANGE", unknown_list, 5, 10])
       assert val === []
     end
 
@@ -276,28 +278,28 @@ defmodule RemixdbTest do
       mylist = :erlang.make_ref() |> inspect()
       unknown_list = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["LPUSH", mylist, "world"])
+      {:ok, val} = client |> :eredis.q(["LPUSH", mylist, "world"])
       assert val === "1"
 
-      val = client |> Exredis.query(["LPUSHX", mylist, "Hello"])
+      {:ok, val} = client |> :eredis.q(["LPUSHX", mylist, "Hello"])
       assert val === "2"
 
-      val = client |> Exredis.query(["RPUSHX", mylist, "There"])
+      {:ok, val} = client |> :eredis.q(["RPUSHX", mylist, "There"])
       assert val === "3"
 
-      val = client |> Exredis.query(["LPUSHX", unknown_list, "Hello"])
+      {:ok, val} = client |> :eredis.q(["LPUSHX", unknown_list, "Hello"])
       assert val === "0"
 
-      val = client |> Exredis.query(["RPUSHX", unknown_list, "Hello"])
+      {:ok, val} = client |> :eredis.q(["RPUSHX", unknown_list, "Hello"])
       assert val === "0"
 
-      val = client |> Exredis.query(["LLEN", mylist])
+      {:ok, val} = client |> :eredis.q(["LLEN", mylist])
       assert val === "3"
 
-      val = client |> Exredis.query(["LLEN", unknown_list])
+      {:ok, val} = client |> :eredis.q(["LLEN", unknown_list])
       assert val === "0"
 
-      val = client |> Exredis.query(["EXISTS", unknown_list])
+      {:ok, val} = client |> :eredis.q(["EXISTS", unknown_list])
       assert val === "0"
     end
 
@@ -305,29 +307,29 @@ defmodule RemixdbTest do
       mylist = :erlang.make_ref() |> inspect()
       unknown_list = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["LLEN", mylist])
+      {:ok, val} = client |> :eredis.q(["LLEN", mylist])
       assert val === "0"
 
-      val = client |> Exredis.query(["RPUSH", mylist, "one", "two"])
+      {:ok, val} = client |> :eredis.q(["RPUSH", mylist, "one", "two"])
       assert val === "2"
-      val = client |> Exredis.query(["RPUSH", mylist, "three"])
+      {:ok, val} = client |> :eredis.q(["RPUSH", mylist, "three"])
       assert val === "3"
 
-      val = client |> Exredis.query(["LLEN", mylist])
+      {:ok, val} = client |> :eredis.q(["LLEN", mylist])
       assert val === "3"
 
-      val = client |> Exredis.query(["LPOP", mylist])
+      {:ok, val} = client |> :eredis.q(["LPOP", mylist])
       assert val === "one"
 
-      client |> Exredis.query(["LPOP", mylist])
-      client |> Exredis.query(["LPOP", mylist])
-      val = client |> Exredis.query(["LPOP", mylist])
+      client |> :eredis.q(["LPOP", mylist])
+      client |> :eredis.q(["LPOP", mylist])
+      {:ok, val} = client |> :eredis.q(["LPOP", mylist])
       assert val === :undefined
 
-      val = client |> Exredis.query(["EXISTS", mylist])
+      {:ok, val} = client |> :eredis.q(["EXISTS", mylist])
       assert val === "0"
 
-      val = client |> Exredis.query(["LPOP", unknown_list])
+      {:ok, val} = client |> :eredis.q(["LPOP", unknown_list])
       assert val === :undefined
     end
 
@@ -338,22 +340,22 @@ defmodule RemixdbTest do
 
       ["one", "two", "three"]
       |> Enum.each(fn el ->
-        client |> Exredis.query(["RPUSH", mylist, el])
+        client |> :eredis.q(["RPUSH", mylist, el])
       end)
 
-      val = client |> Exredis.query(["RPOPLPUSH", mylist, myotherlist])
+      {:ok, val} = client |> :eredis.q(["RPOPLPUSH", mylist, myotherlist])
       assert val === "three"
 
-      val = client |> Exredis.query(["LRANGE", mylist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 0, -1])
       assert val === ["one", "two"]
 
-      val = client |> Exredis.query(["LRANGE", myotherlist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", myotherlist, 0, -1])
       assert val === ["three"]
 
-      val = client |> Exredis.query(["RPOPLPUSH", unknown_list, myotherlist])
+      {:ok, val} = client |> :eredis.q(["RPOPLPUSH", unknown_list, myotherlist])
       assert val === :undefined
 
-      val = client |> Exredis.query(["LRANGE", myotherlist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", myotherlist, 0, -1])
       assert val === ["three"]
     end
 
@@ -362,29 +364,29 @@ defmodule RemixdbTest do
 
       ["one", "two", "three"]
       |> Enum.each(fn el ->
-        client |> Exredis.query(["RPUSH", mylist, el])
+        client |> :eredis.q(["RPUSH", mylist, el])
       end)
 
-      val = client |> Exredis.query(["LTRIM", mylist, 1, -1])
+      {:ok, val} = client |> :eredis.q(["LTRIM", mylist, 1, -1])
       assert val === "OK"
 
-      val = client |> Exredis.query(["LRANGE", mylist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 0, -1])
       assert val === ["two", "three"]
     end
 
     test "LINDEX", %{client: client} do
       mylist = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["LPUSH", mylist, "World"])
-      client |> Exredis.query(["LPUSH", mylist, "Hello"])
+      client |> :eredis.q(["LPUSH", mylist, "World"])
+      client |> :eredis.q(["LPUSH", mylist, "Hello"])
 
-      val = client |> Exredis.query(["LINDEX", mylist, 0])
+      {:ok, val} = client |> :eredis.q(["LINDEX", mylist, 0])
       assert val === "Hello"
 
-      val = client |> Exredis.query(["LINDEX", mylist, -1])
+      {:ok, val} = client |> :eredis.q(["LINDEX", mylist, -1])
       assert val === "World"
 
-      val = client |> Exredis.query(["LINDEX", mylist, 2])
+      {:ok, val} = client |> :eredis.q(["LINDEX", mylist, 2])
       assert val === :undefined
     end
 
@@ -393,17 +395,17 @@ defmodule RemixdbTest do
 
       ["one", "two", "three"]
       |> Enum.each(fn el ->
-        client |> Exredis.query(["RPUSH", mylist, el])
+        client |> :eredis.q(["RPUSH", mylist, el])
       end)
 
-      client |> Exredis.query(["LSET", mylist, 0, "four"])
-      val = client |> Exredis.query(["LSET", mylist, -2, "five"])
+      client |> :eredis.q(["LSET", mylist, 0, "four"])
+      {:ok, val} = client |> :eredis.q(["LSET", mylist, -2, "five"])
       assert val === "OK"
 
-      val = client |> Exredis.query(["LRANGE", mylist, 0, -1])
+      {:ok, val} = client |> :eredis.q(["LRANGE", mylist, 0, -1])
       assert val === ["four", "five", "three"]
 
-      val = client |> Exredis.query(["LSET", mylist, 200, "seven"])
+      {:error, val} = client |> :eredis.q(["LSET", mylist, 200, "seven"])
       assert val === "ERR index out of range"
     end
 
@@ -414,40 +416,40 @@ defmodule RemixdbTest do
       myset = :erlang.make_ref() |> inspect()
       unknown_set = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["SADD", myset, "Hello"])
+      {:ok, val} = client |> :eredis.q(["SADD", myset, "Hello"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SADD", myset, "World"])
+      {:ok, val} = client |> :eredis.q(["SADD", myset, "World"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SADD", myset, "World"])
+      {:ok, val} = client |> :eredis.q(["SADD", myset, "World"])
       assert val === "0"
 
-      val = client |> Exredis.query(["SMEMBERS", myset])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", myset])
       assert val |> Enum.sort() === ["Hello", "World"] |> Enum.sort()
 
-      val = client |> Exredis.query(["SISMEMBER", myset, "World"])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", myset, "World"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SISMEMBER", myset, "something"])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", myset, "something"])
       assert val === "0"
 
-      val = client |> Exredis.query(["SMEMBERS", unknown_set])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", unknown_set])
       assert val === []
 
-      val = client |> Exredis.query(["SCARD", myset])
+      {:ok, val} = client |> :eredis.q(["SCARD", myset])
       assert val === "2"
 
-      val = client |> Exredis.query(["SCARD", unknown_set])
+      {:ok, val} = client |> :eredis.q(["SCARD", unknown_set])
       assert val === "0"
 
-      val = client |> Exredis.query(["SISMEMBER", unknown_set, "something"])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", unknown_set, "something"])
       assert val === "0"
 
       full_list = ["a", "b", "c", "d"]
       _full_set = full_list |> MapSet.new()
       new_set = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["SADD", new_set] ++ full_list)
+      {:ok, val} = client |> :eredis.q(["SADD", new_set] ++ full_list)
       assert val === "4"
     end
 
@@ -456,10 +458,10 @@ defmodule RemixdbTest do
       val1 = :erlang.make_ref() |> inspect()
       val2 = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["SADD", key, val1])
+      {:ok, val} = client |> :eredis.q(["SADD", key, val1])
       assert val === "1"
 
-      val = client |> Exredis.query(["SMISMEMBER", key, val1, val2])
+      {:ok, val} = client |> :eredis.q(["SMISMEMBER", key, val1, val2])
       assert val === ["1", "0"]
     end
 
@@ -468,16 +470,16 @@ defmodule RemixdbTest do
       key2 = :erlang.make_ref() |> inspect()
       key3 = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
+      client |> :eredis.q(["SADD", key1] ++ ["a", "b", "c", "d"])
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a"])
-      client |> Exredis.query(["SADD", key3, "c"])
-      client |> Exredis.query(["SADD", key3, "e"])
+      client |> :eredis.q(["SADD", key3, "a"])
+      client |> :eredis.q(["SADD", key3, "c"])
+      client |> :eredis.q(["SADD", key3, "e"])
 
       unknown_key = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["SUNION", key1, key2, key3, unknown_key])
+      {:ok, val} = client |> :eredis.q(["SUNION", key1, key2, key3, unknown_key])
       assert val |> Enum.sort() === ["a", "b", "c", "d", "e"] |> Enum.sort()
     end
 
@@ -486,19 +488,19 @@ defmodule RemixdbTest do
       key2 = :erlang.make_ref() |> inspect()
       key3 = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
+      client |> :eredis.q(["SADD", key1] ++ ["a", "b", "c", "d"])
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a"])
-      client |> Exredis.query(["SADD", key3, "c"])
-      client |> Exredis.query(["SADD", key3, "e"])
+      client |> :eredis.q(["SADD", key3, "a"])
+      client |> :eredis.q(["SADD", key3, "c"])
+      client |> :eredis.q(["SADD", key3, "e"])
 
-      val = client |> Exredis.query(["SINTER", key1, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SINTER", key1, key2, key3])
       assert val === ["c"]
 
       unknown_set = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["SINTER", unknown_set, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SINTER", unknown_set, key2, key3])
       assert val === []
     end
 
@@ -507,16 +509,16 @@ defmodule RemixdbTest do
       key2 = :erlang.make_ref() |> inspect()
       key3 = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
+      client |> :eredis.q(["SADD", key1] ++ ["a", "b", "c", "d"])
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a"])
-      client |> Exredis.query(["SADD", key3, "c"])
-      client |> Exredis.query(["SADD", key3, "e"])
+      client |> :eredis.q(["SADD", key3, "a"])
+      client |> :eredis.q(["SADD", key3, "c"])
+      client |> :eredis.q(["SADD", key3, "e"])
 
       unknown_key = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["SDIFF", key1, key2, key3, unknown_key])
+      {:ok, val} = client |> :eredis.q(["SDIFF", key1, key2, key3, unknown_key])
       assert val |> Enum.sort() === ["b", "d"] |> Enum.sort()
     end
 
@@ -524,12 +526,12 @@ defmodule RemixdbTest do
       key1 = :erlang.make_ref() |> inspect()
       unknown_set = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
+      client |> :eredis.q(["SADD", key1] ++ ["a", "b", "c", "d"])
 
-      val = client |> Exredis.query(["SRANDMEMBER", key1])
+      {:ok, val} = client |> :eredis.q(["SRANDMEMBER", key1])
       assert ["a", "b", "c", "d"] |> MapSet.new() |> MapSet.member?(val)
 
-      val = client |> Exredis.query(["SRANDMEMBER", unknown_set])
+      {:ok, val} = client |> :eredis.q(["SRANDMEMBER", unknown_set])
       assert val === :undefined
     end
 
@@ -538,33 +540,33 @@ defmodule RemixdbTest do
       set2 = :erlang.make_ref() |> inspect()
       unknown_set = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", set1, "a"])
-      client |> Exredis.query(["SADD", set1, "b"])
+      client |> :eredis.q(["SADD", set1, "a"])
+      client |> :eredis.q(["SADD", set1, "b"])
 
-      val = client |> Exredis.query(["SMOVE", set1, set2, "a"])
+      {:ok, val} = client |> :eredis.q(["SMOVE", set1, set2, "a"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SISMEMBER", set1, "a"])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", set1, "a"])
       assert val === "0"
-      val = client |> Exredis.query(["SISMEMBER", set2, "a"])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", set2, "a"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SCARD", set1])
+      {:ok, val} = client |> :eredis.q(["SCARD", set1])
       assert val === "1"
 
-      val = client |> Exredis.query(["SCARD", set2])
+      {:ok, val} = client |> :eredis.q(["SCARD", set2])
       assert val === "1"
 
-      val = client |> Exredis.query(["SMOVE", set1, set2, "b"])
+      {:ok, val} = client |> :eredis.q(["SMOVE", set1, set2, "b"])
       assert val === "1"
 
-      val = client |> Exredis.query(["SCARD", set1])
-      assert val === "0"
-
-      val = client |> Exredis.query(["EXISTS", "set1"])
+      {:ok, val} = client |> :eredis.q(["SCARD", set1])
       assert val === "0"
 
-      val = client |> Exredis.query(["SMOVE", unknown_set, set2, "a"])
+      {:ok, val} = client |> :eredis.q(["EXISTS", "set1"])
+      assert val === "0"
+
+      {:ok, val} = client |> :eredis.q(["SMOVE", unknown_set, set2, "a"])
       assert val === "0"
 
     end
@@ -574,23 +576,23 @@ defmodule RemixdbTest do
       unknown_set = :erlang.make_ref() |> inspect()
 
       full_list = ["a", "b", "c", "d"]
-      client |> Exredis.query(["SADD", key1] ++ full_list)
+      client |> :eredis.q(["SADD", key1] ++ full_list)
 
-      val = client |> Exredis.query(["SREM", key1, "a", "d", "e"])
+      {:ok, val} = client |> :eredis.q(["SREM", key1, "a", "d", "e"])
       assert val === "2"
 
-      val = client |> Exredis.query(["SREM", unknown_set, "a", "d", "e"])
+      {:ok, val} = client |> :eredis.q(["SREM", unknown_set, "a", "d", "e"])
       assert val === "0"
 
-      val = client |> Exredis.query(["SREM", key1] ++ full_list)
+      {:ok, val} = client |> :eredis.q(["SREM", key1] ++ full_list)
       assert val === "2"
 
-      val = client |> Exredis.query(["SREM", key1] ++ full_list)
+      {:ok, val} = client |> :eredis.q(["SREM", key1] ++ full_list)
       assert val === "0"
 
       # SantoshTODO
-      # val = client |> Exredis.query(["SREM", "key1"] ++ full_list)
-      # val = client |> Exredis.query(["EXISTS", "key1"])
+      # val = client |> :eredis.q(["SREM", "key1"] ++ full_list)
+      # val = client |> :eredis.q(["EXISTS", "key1"])
       # assert val === "0"
     end
 
@@ -600,27 +602,27 @@ defmodule RemixdbTest do
 
       full_list = ["a", "b", "c", "d"]
       full_set = full_list |> MapSet.new()
-      client |> Exredis.query(["SADD", key1] ++ full_list)
+      client |> :eredis.q(["SADD", key1] ++ full_list)
 
-      val = client |> Exredis.query(["SPOP", key1])
+      {:ok, val} = client |> :eredis.q(["SPOP", key1])
       assert full_set |> MapSet.new() |> MapSet.member?(val)
       val_set = [val] |> MapSet.new()
 
-      val = client |> Exredis.query(["SISMEMBER", key1, val])
+      {:ok, val} = client |> :eredis.q(["SISMEMBER", key1, val])
       assert val === "0"
 
-      members = client |> Exredis.query(["SMEMBERS", key1])
+      {:ok, members} = client |> :eredis.q(["SMEMBERS", key1])
       assert full_set |> MapSet.difference(val_set) |> Enum.sort() === members |> Enum.sort()
 
-      val = client |> Exredis.query(["SPOP", "unknown_set"])
+      {:ok, val} = client |> :eredis.q(["SPOP", "unknown_set"])
       assert val === :undefined
 
-      client |> Exredis.query(["SADD", key2, "a"])
-      val = client |> Exredis.query(["SPOP", key2])
+      client |> :eredis.q(["SADD", key2, "a"])
+      {:ok, val} = client |> :eredis.q(["SPOP", key2])
       assert val === "a"
 
       # SantoshTODO
-      # val = client |> Exredis.query(["EXISTS", key2])
+      # val = client |> :eredis.q(["EXISTS", key2])
       # assert val === "0"
     end
 
@@ -632,29 +634,29 @@ defmodule RemixdbTest do
 
       full_list = ["a", "b", "c", "d"]
       _full_set = full_list |> MapSet.new()
-      client |> Exredis.query(["SADD", key1] ++ full_list)
+      client |> :eredis.q(["SADD", key1] ++ full_list)
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a", "c", "e"])
+      client |> :eredis.q(["SADD", key3, "a", "c", "e"])
 
-      val = client |> Exredis.query(["SINTERSTORE", key4, key1, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SINTERSTORE", key4, key1, key2, key3])
       assert val === "1"
 
-      val = client |> Exredis.query(["SMEMBERS", key4])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", key4])
       assert val === ["c"]
 
       # SantoshTODO
       # Overwrites an existing key
-      # client |> Exredis.query(["SET", "mykey", "hello"])
-      # client |> Exredis.query(["SINTERSTORE", "mykey", "key1", "key2", "key3"])
-      # val = client |> Exredis.query(["SMEMBERS", "mykey"])
+      # client |> :eredis.q(["SET", "mykey", "hello"])
+      # client |> :eredis.q(["SINTERSTORE", "mykey", "key1", "key2", "key3"])
+      # val = client |> :eredis.q(["SMEMBERS", "mykey"])
       # assert val === ["c"]
 
       # Deletes a key when storing an empty set
-      # val = client |> Exredis.query(["SINTERSTORE", "mykey", "unknown_set", "unknown_set"])
+      # val = client |> :eredis.q(["SINTERSTORE", "mykey", "unknown_set", "unknown_set"])
       # assert val === "0"
-      # val = client |> Exredis.query(["EXISTS", "mykey"])
+      # val = client |> :eredis.q(["EXISTS", "mykey"])
       # assert val === "0"
     end
 
@@ -666,29 +668,29 @@ defmodule RemixdbTest do
 
       full_list = ["a", "b", "c", "d"]
       _full_set = full_list |> MapSet.new()
-      client |> Exredis.query(["SADD", key1] ++ full_list)
+      client |> :eredis.q(["SADD", key1] ++ full_list)
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a", "c", "e"])
+      client |> :eredis.q(["SADD", key3, "a", "c", "e"])
 
-      val = client |> Exredis.query(["SUNIONSTORE", key4, key1, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SUNIONSTORE", key4, key1, key2, key3])
       assert val === "5"
 
-      val = client |> Exredis.query(["SMEMBERS", key4])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", key4])
       assert val |> Enum.sort() === ["a", "b", "c", "d", "e"] |> Enum.sort()
 
       # SantoshTODO
       # Overwrites an existing key
-      # client |> Exredis.query(["SET", "mykey", "hello"])
-      # client |> Exredis.query(["SUNIONSTORE", "mykey", "key1", "key2", "key3"])
-      # val = client |> Exredis.query(["SMEMBERS", "mykey"])
+      # client |> :eredis.q(["SET", "mykey", "hello"])
+      # client |> :eredis.q(["SUNIONSTORE", "mykey", "key1", "key2", "key3"])
+      # val = client |> :eredis.q(["SMEMBERS", "mykey"])
       # assert (val |> Enum.sort) === (["a", "b", "c", "d", "e"] |> Enum.sort)
       #
       # Deletes a key when storing an empty set
-      # val = client |> Exredis.query(["SUNIONSTORE", "mykey", "unknown_set", "unknown_set"])
+      # val = client |> :eredis.q(["SUNIONSTORE", "mykey", "unknown_set", "unknown_set"])
       # assert val === "0"
-      # val = client |> Exredis.query(["EXISTS", "mykey"])
+      # val = client |> :eredis.q(["EXISTS", "mykey"])
       # assert val === "0"
     end
 
@@ -697,32 +699,32 @@ defmodule RemixdbTest do
       key2 = :erlang.make_ref() |> inspect()
       key3 = :erlang.make_ref() |> inspect()
 
-      client |> Exredis.query(["SADD", key1] ++ ["a", "b", "c", "d"])
+      client |> :eredis.q(["SADD", key1] ++ ["a", "b", "c", "d"])
 
-      client |> Exredis.query(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", key2, "c"])
 
-      client |> Exredis.query(["SADD", key3, "a"])
-      client |> Exredis.query(["SADD", key3, "c"])
-      client |> Exredis.query(["SADD", key3, "e"])
+      client |> :eredis.q(["SADD", key3, "a"])
+      client |> :eredis.q(["SADD", key3, "c"])
+      client |> :eredis.q(["SADD", key3, "e"])
 
       key = :erlang.make_ref() |> inspect()
-      val = client |> Exredis.query(["SDIFFSTORE", key, key1, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SDIFFSTORE", key, key1, key2, key3])
       assert val === "2"
 
-      val = client |> Exredis.query(["SMEMBERS", key])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", key])
       assert val |> Enum.sort() === ["b", "d"] |> Enum.sort()
 
       # SantoshTODO
       # #Overwrites an existing key
-      # client |> Exredis.query(["SET", "mykey", "hello"])
-      # client |> Exredis.query(["SDIFFSTORE", "mykey", "key1", "key2", "key3"])
-      # val = client |> Exredis.query(["SMEMBERS", "mykey"])
+      # client |> :eredis.q(["SET", "mykey", "hello"])
+      # client |> :eredis.q(["SDIFFSTORE", "mykey", "key1", "key2", "key3"])
+      # val = client |> :eredis.q(["SMEMBERS", "mykey"])
       # assert (val |> Enum.sort) === (["b", "d"] |> Enum.sort)
       #
       # Deletes a key when storing an empty set
-      # val = client |> Exredis.query(["SDIFFSTORE", "mykey", "key1", "key1"])
+      # val = client |> :eredis.q(["SDIFFSTORE", "mykey", "key1", "key1"])
       # assert val === "0"
-      # val = client |> Exredis.query(["EXISTS", "mykey"])
+      # val = client |> :eredis.q(["EXISTS", "mykey"])
       # assert val === "0"
     end
 
@@ -732,135 +734,137 @@ defmodule RemixdbTest do
       my_hash = :erlang.make_ref() |> inspect()
       unknown_hash = :erlang.make_ref() |> inspect()
 
-      val = client |> Exredis.query(["HSET", my_hash, "name", "john"])
+      {:ok, val} = client |> :eredis.q(["HSET", my_hash, "name", "john"])
       assert val === "1"
-      val = client |> Exredis.query(["HSET", my_hash, "name", "john"])
+      {:ok, val} = client |> :eredis.q(["HSET", my_hash, "name", "john"])
       assert val === "0"
-      client |> Exredis.query(["HSET", my_hash, "age", "30"])
+      client |> :eredis.q(["HSET", my_hash, "age", "30"])
 
-      val = client |> Exredis.query(["HLEN", my_hash])
+      {:ok, val} = client |> :eredis.q(["HLEN", my_hash])
       assert val === "2"
 
-      val = client |> Exredis.query(["HGETALL", my_hash])
+      {:ok, val} = client |> :eredis.q(["HGETALL", my_hash])
       assert val |> Enum.sort() === ["name", "john", "age", "30"] |> Enum.sort()
 
-      val = client |> Exredis.query(["HGET", my_hash, "name"])
+      {:ok, val} = client |> :eredis.q(["HGET", my_hash, "name"])
       assert val === "john"
-      val = client |> Exredis.query(["HGET", my_hash, "unknown_field"])
+      {:ok, val} = client |> :eredis.q(["HGET", my_hash, "unknown_field"])
       assert val === :undefined
 
-      val = client |> Exredis.query(["HKEYS", my_hash])
+      {:ok, val} = client |> :eredis.q(["HKEYS", my_hash])
       assert val |> Enum.sort() === ["name", "age"] |> Enum.sort()
 
-      val = client |> Exredis.query(["HEXISTS", my_hash, "name"])
+      {:ok, val} = client |> :eredis.q(["HEXISTS", my_hash, "name"])
       assert val === "1"
-      val = client |> Exredis.query(["HEXISTS", my_hash, "unknown_field"])
+      {:ok, val} = client |> :eredis.q(["HEXISTS", my_hash, "unknown_field"])
       assert val === "0"
-      val = client |> Exredis.query(["HEXISTS", unknown_hash, "unknown_field"])
+      {:ok, val} = client |> :eredis.q(["HEXISTS", unknown_hash, "unknown_field"])
       assert val === "0"
 
-      val = client |> Exredis.query(["HKEYS", unknown_hash])
+      {:ok, val} = client |> :eredis.q(["HKEYS", unknown_hash])
       assert val === []
 
-      val = client |> Exredis.query(["HVALS", my_hash])
+      {:ok, val} = client |> :eredis.q(["HVALS", my_hash])
       assert val |> Enum.sort() === ["john", "30"] |> Enum.sort()
-      val = client |> Exredis.query(["HVALS", unknown_hash])
+      {:ok, val} = client |> :eredis.q(["HVALS", unknown_hash])
       assert val === []
 
-      val =
-        client |> Exredis.query(["HMSET", my_hash, "city", "SF", "state", "CA", "name", "john"])
+      {:ok, val} =
+        client |> :eredis.q(["HMSET", my_hash, "city", "SF", "state", "CA", "name", "john"])
 
       assert val === "OK"
-      val = client |> Exredis.query(["HGET", my_hash, "city"])
+      {:ok, val} = client |> :eredis.q(["HGET", my_hash, "city"])
       assert val === "SF"
 
-      val = client |> Exredis.query(["HMGET", my_hash, "city", "state", "name", "unknown_field"])
+      {:ok, val} = client |> :eredis.q(["HMGET", my_hash, "city", "state", "name", "unknown_field"])
       assert val === ["SF", "CA", "john", :undefined]
 
-      val = client |> Exredis.query(["HMGET", unknown_hash, "city", "state"])
+      {:ok, val} = client |> :eredis.q(["HMGET", unknown_hash, "city", "state"])
       assert val === [:undefined, :undefined]
 
-      val = client |> Exredis.query(["HSTRLEN", my_hash, "name"])
+      {:ok, val} = client |> :eredis.q(["HSTRLEN", my_hash, "name"])
       assert val === "john" |> String.length() |> Integer.to_string()
-      val = client |> Exredis.query(["HSTRLEN", unknown_hash, "name"])
+      {:ok, val} = client |> :eredis.q(["HSTRLEN", unknown_hash, "name"])
       assert val === "0"
-      val = client |> Exredis.query(["HSTRLEN", my_hash, "unknown_set"])
+      {:ok, val} = client |> :eredis.q(["HSTRLEN", my_hash, "unknown_set"])
       assert val === "0"
 
-      client |> Exredis.query(["HSET", my_hash, "city", "SF"])
-      val = client |> Exredis.query(["HDEL", my_hash, "city", "unknown_field", "name"])
+      client |> :eredis.q(["HSET", my_hash, "city", "SF"])
+      {:ok, val} = client |> :eredis.q(["HDEL", my_hash, "city", "unknown_field", "name"])
       assert val === "2"
 
-      val = client |> Exredis.query(["HSETNX", my_hash, "city", "SF"])
+      {:ok, val} = client |> :eredis.q(["HSETNX", my_hash, "city", "SF"])
       assert val === "1"
-      val = client |> Exredis.query(["HSETNX", my_hash, "city", "SF"])
+      {:ok, val} = client |> :eredis.q(["HSETNX", my_hash, "city", "SF"])
       assert val === "0"
 
-      val = client |> Exredis.query(["HINCRBY", my_hash, "counter", 3])
+      {:ok, val} = client |> :eredis.q(["HINCRBY", my_hash, "counter", 3])
       assert val === "3"
-      val = client |> Exredis.query(["HINCRBY", my_hash, "counter", 300])
+      {:ok, val} = client |> :eredis.q(["HINCRBY", my_hash, "counter", 300])
       assert val === "303"
-      val = client |> Exredis.query(["HINCRBY", my_hash, "counter", -600])
+      {:ok, val} = client |> :eredis.q(["HINCRBY", my_hash, "counter", -600])
       assert val === "-297"
       # SantoshTODO
-      # val = client |> Exredis.query(["HDEL", "myhash", "city", "unknown_field", "name", "age"])
+      # val = client |> :eredis.q(["HDEL", "myhash", "city", "unknown_field", "name", "age"])
       # assert val === "1"
-      # val = client |> Exredis.query(["EXISTS", "myhash"])
+      # val = client |> :eredis.q(["EXISTS", "myhash"])
       # assert val === "0"
     end
 
     @tag slow: true, skip: true
     test "EXPIRE", %{client: client} do
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["SET", "mykey", "hello"])
       assert val === "OK"
 
-      val = client |> Exredis.query(["EXPIRE", "mykey", 1])
+      {:ok, val} = client |> :eredis.q(["EXPIRE", "mykey", 1])
       assert val === "1"
 
-      val = client |> Exredis.query(["TTL", "mykey"])
+      {:ok, val} = client |> :eredis.q(["TTL", "mykey"])
       assert val === "1"
 
       :timer.sleep(1_200)
-      val = client |> Exredis.query(["TTL", "mykey"])
+      {:ok, val} = client |> :eredis.q(["TTL", "mykey"])
       assert val === "-2"
 
-      val = client |> Exredis.query(["GET", "mykey"])
+      {:ok, val} = client |> :eredis.q(["GET", "mykey"])
       assert val === :undefined
     end
 
     @tag slow: true, skip: true
     test "PERSIST", %{client: client} do
-      val = client |> Exredis.query(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["SET", "mykey", "hello"])
       assert val === "OK"
 
-      val = client |> Exredis.query(["EXPIRE", "mykey", 1])
+      {:ok, val} = client |> :eredis.q(["EXPIRE", "mykey", 1])
       assert val === "1"
 
-      val = client |> Exredis.query(["PERSIST", "mykey"])
+      {:ok, val} = client |> :eredis.q(["PERSIST", "mykey"])
       assert val === "1"
 
-      val = client |> Exredis.query(["TTL", "mykey"])
+      {:ok, val} = client |> :eredis.q(["TTL", "mykey"])
       assert val === "-1"
 
       :timer.sleep(1_200)
-      val = client |> Exredis.query(["GET", "mykey"])
+      {:ok, val} = client |> :eredis.q(["GET", "mykey"])
       assert val === "hello"
 
-      val = client |> Exredis.query(["PERSIST", "unknown_key"])
+      {:ok, val} = client |> :eredis.q(["PERSIST", "unknown_key"])
       assert val === "0"
 
-      val = client |> Exredis.query(["TTL", "unknown_key"])
+      {:ok, val} = client |> :eredis.q(["TTL", "unknown_key"])
       assert val === "-2"
     end
 
     test "flushall", %{client: client} do
-      client |> Exredis.query(["SET", "A", "1"])
-      db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+      client |> :eredis.q(["SET", "A", "1"])
+      { :ok, db_sz} = client |> :eredis.q(["DBSIZE"])
+      db_sz = db_sz |> String.to_integer()
       assert db_sz > 0
 
-      val = client |> Exredis.query(["FLUSHALL"])
+      {:ok, val} = client |> :eredis.q(["FLUSHALL"])
       assert val === "OK"
-      new_db_sz = client |> Exredis.query(["DBSIZE"]) |> String.to_integer()
+      {:ok, new_db_sz} = client |> :eredis.q(["DBSIZE"])
+      new_db_sz = new_db_sz |> String.to_integer()
       assert new_db_sz === 0
       # assert val === (prev_db_size + 2)
     end
