@@ -1,8 +1,57 @@
 defmodule Remixdb.List do
+  @moduledoc """
+  A Redis-like list store implemented with GenServer.
+
+  This module provides operations similar to Redis lists, such as:
+  - Adding elements to the left or right of a list.
+  - Popping elements from the left or right of a list.
+  - Getting elements by index, range, or trimming the list.
+  - Renaming keys and flushing all data.
+
+  ## Features
+
+  - Store and manipulate lists identified by keys.
+  - Perform atomic list operations via GenServer.
+  - Useful for in-memory data structures with list semantics.
+
+  ## Example Usage
+
+      iex> Remixdb.List.start_link(:ok)
+      {:ok, pid}
+
+      iex> Remixdb.List.rpush("mylist", ["a", "b", "c"])
+      3
+
+      iex> Remixdb.List.lrange("mylist", 0, -1)
+      ["a", "b", "c"]
+
+      iex> Remixdb.List.lpop("mylist")
+      "a"
+
+      iex> Remixdb.List.rpoplpush("mylist", "anotherlist")
+      "c"
+
+      iex> Remixdb.List.dbsize()
+      2
+  """
+
   use GenServer
 
   @name :remixdb_list
 
+  @doc """
+  Starts the `Remixdb.List` GenServer.
+
+  ## Parameters
+    - `_args` (any): Arguments for the GenServer (currently ignored).
+
+  ## Returns
+    - `{:ok, pid}` on success.
+
+  ## Example
+
+      Remixdb.List.start_link(:ok)
+  """
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
   end
@@ -11,30 +60,130 @@ defmodule Remixdb.List do
     {:ok, Map.new()}
   end
 
+  @doc """
+  Flushes all lists in the store.
+
+  ## Returns
+    - `:ok` on success.
+
+  ## Example
+
+      Remixdb.List.flushall()
+      :ok
+  """
   def flushall() do
     GenServer.call(@name, :flushall)
   end
 
+  @doc """
+  Gets the total number of lists in the store.
+
+  ## Returns
+    - The size of the database as an integer.
+
+  ## Example
+
+      Remixdb.List.dbsize()
+      2
+  """
   def dbsize() do
     GenServer.call(@name, :dbsize)
   end
 
+  @doc """
+  Gets the length of a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+
+  ## Returns
+    - The number of elements in the list.
+
+  ## Example
+
+      Remixdb.List.llen("mylist")
+      3
+  """
   def llen(list_name) do
     GenServer.call(@name, {:llen, list_name})
   end
 
+  @doc """
+  Gets a range of elements from a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `start` (integer): The start index (inclusive).
+    - `stop` (integer): The stop index (inclusive).
+
+  ## Returns
+    - A list of elements in the specified range.
+
+  ## Example
+
+      Remixdb.List.lrange("mylist", 0, -1)
+      ["a", "b", "c"]
+  """
   def lrange(list_name, start, stop) do
     GenServer.call(@name, {:lrange, list_name, start, stop})
   end
 
+  @doc """
+  Trims a list to the specified range.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `start` (integer): The start index (inclusive).
+    - `stop` (integer): The stop index (inclusive).
+
+  ## Returns
+    - `:ok` on success.
+
+  ## Example
+
+      Remixdb.List.ltrim("mylist", 0, 1)
+      :ok
+  """
   def ltrim(list_name, start, stop) do
     GenServer.call(@name, {:ltrim, list_name, start, stop})
   end
 
+  @doc """
+  Sets the value at a specific index in a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `idx` (integer): The index to set.
+    - `val` (any): The value to set.
+
+  ## Returns
+    - `:ok` on success.
+    - `{:error, "ERR index out of range"}` if the index is invalid.
+
+  ## Example
+
+      Remixdb.List.lset("mylist", 1, "new_value")
+      :ok
+  """
   def lset(list_name, idx, val) when is_integer(idx) do
     GenServer.call(@name, {:lset, list_name, idx, val})
   end
 
+  @doc """
+  Gets the value at a specific index in a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `idx` (integer): The index to retrieve.
+
+  ## Returns
+    - The value at the specified index, or `nil` if the index is invalid.
+
+  ## Example
+
+      Remixdb.List.lindex("mylist", 1)
+      "b"
+  """
   def lindex(list_name, idx) when is_integer(idx) do
     GenServer.call(@name, {:lindex, list_name, idx})
   end
@@ -44,34 +193,153 @@ defmodule Remixdb.List do
     lindex(list_name, idx)
   end
 
+  @doc """
+  Appends one or more elements to the right of a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `items` (list): The elements to append.
+
+  ## Returns
+    - The new length of the list.
+
+  ## Example
+
+      Remixdb.List.rpush("mylist", ["d", "e"])
+      5
+  """
   def rpush(list_name, items) do
     GenServer.call(@name, {:rpush, list_name, items})
   end
 
+  @doc """
+  Appends one or more elements to the right of a list if the list exists.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `items` (list): The elements to append.
+
+  ## Returns
+    - The new length of the list, or `0` if the list does not exist.
+
+  ## Example
+
+      Remixdb.List.rpushx("mylist", ["f"])
+      6
+  """
   def rpushx(list_name, items) do
     GenServer.call(@name, {:rpushx, list_name, items})
   end
 
+  @doc """
+  Prepend one or more elements to the left of a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `items` (list): The elements to prepend.
+
+  ## Returns
+    - The new length of the list.
+
+  ## Example
+
+      Remixdb.List.lpush("mylist", ["x", "y"])
+      5
+  """
   def lpush(list_name, items) do
     GenServer.call(@name, {:lpush, list_name, items})
   end
 
+  @doc """
+  Appends one or more elements to the left of a list if the list exists.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+    - `items` (list): The elements to append.
+
+  ## Returns
+    - The new length of the list, or `0` if the list does not exist.
+
+  ## Example
+
+      Remixdb.List.lpushx("mylist", ["f"])
+      6
+  """
   def lpushx(list_name, items) do
     GenServer.call(@name, {:lpushx, list_name, items})
   end
 
+  @doc """
+  Removes and returns the first element of a list.
+
+  ## Parameters
+    - `list_name` (binary): The name of the list.
+
+  ## Returns
+    - The first element of the list, or `nil` if the list is empty.
+
+  ## Example
+
+      Remixdb.List.lpop("mylist")
+      "a"
+  """
   def lpop(list_name) do
     GenServer.call(@name, {:lpop, list_name})
   end
 
+  @doc """
+  Removes and returns the last element of a list.
+
+  ## Parameters
+  - `list_name` (binary): The name of the list.
+
+  ## Returns
+  - The last element of the list, or `nil` if the list is empty.
+
+  ## Example
+
+      Remixdb.List.rpop("mylist")
+      "c"
+  """
   def rpop(list_name) do
     GenServer.call(@name, {:rpop, list_name})
   end
 
+  @doc """
+  Removes the last element of one list and prepends it to another.
+
+  ## Parameters
+    - `src` (binary): The source list.
+    - `dest` (binary): The destination list.
+
+  ## Returns
+    - The value moved, or `nil` if the source list is empty.
+
+  ## Example
+
+      Remixdb.List.rpoplpush("mylist", "anotherlist")
+      "c"
+  """
   def rpoplpush(src, dest) do
     GenServer.call(@name, {:rpoplpush, src, dest})
   end
 
+  @doc """
+  Renames an existing list to a new name.
+
+  ## Parameters
+    - `old_name` (binary): The current name of the list.
+    - `new_name` (binary): The new name for the list.
+
+  ## Returns
+    - `true` if the rename was successful.
+    - `false` if the old name does not exist.
+
+  ## Example
+
+      Remixdb.List.rename("mylist", "newlist")
+      true
+  """
   def rename(old_name, new_name) do
     GenServer.call(@name, {:rename, old_name, new_name})
   end
