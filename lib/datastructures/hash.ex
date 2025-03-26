@@ -15,26 +15,26 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.start_link(:ok)
-      {:ok, pid}
- 
-      iex> Remixdb.Hash.hset("myhash", "field1", "value1")
-      1
- 
-      iex> Remixdb.Hash.hget("myhash", "field1")
-      "value1"
- 
-      iex> Remixdb.Hash.hkeys("myhash")
-      ["field1"]
- 
-      iex> Remixdb.Hash.hvals("myhash")
-      ["value1"]
- 
-      iex> Remixdb.Hash.hlen("myhash")
-      1
- 
-      iex> Remixdb.Hash.flushall()
-      :ok
+  iex> Remixdb.Hash.start_link(:ok)
+  {:ok, pid}
+  
+  iex> Remixdb.Hash.hset("myhash", "field1", "value1")
+  1
+  
+  iex> Remixdb.Hash.hget("myhash", "field1")
+  "value1"
+  
+  iex> Remixdb.Hash.hkeys("myhash")
+  ["field1"]
+  
+  iex> Remixdb.Hash.hvals("myhash")
+  ["value1"]
+  
+  iex> Remixdb.Hash.hlen("myhash")
+  1
+  
+  iex> Remixdb.Hash.flushall()
+  :ok
   """
   use GenServer
 
@@ -51,16 +51,22 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.start_link(:ok)
-      :ok
+  iex> Remixdb.Hash.start_link(:ok)
+  :ok
   """
   def start_link(_args) do
     GenServer.start_link __MODULE__, :ok, name: @name
   end
 
   def init(:ok) do
-    {:ok, Map.new}
+    # Create a named ETS table with public access and good read/write concurrency options.
+    table = :ets.new(@name, [:named_table, :public, read_concurrency: true, write_concurrency: true])
+    {:ok, table}
   end
+
+  # def init(:ok) do
+  #   {:ok, Map.new}
+  # end
 
   @doc """
   Flushes all hashes and their fields from the store.
@@ -70,8 +76,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.flushall()
-      :ok
+  iex> Remixdb.Hash.flushall()
+  :ok
   """
   def flushall() do
     GenServer.call @name, :flushall
@@ -106,8 +112,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hset("myhash", "field1", "value1")
-      1
+  iex> Remixdb.Hash.hset("myhash", "field1", "value1")
+  1
   """
   def hset(hash_name, key, val) do
     GenServer.call @name, {:hset, hash_name, key, val}
@@ -127,17 +133,17 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hsetnx("myhash", "field1", "value1")
-      1
+  iex> Remixdb.Hash.hsetnx("myhash", "field1", "value1")
+  1
 
-      iex> Remixdb.Hash.hget("myhash", "field1")
-      "value1"
+  iex> Remixdb.Hash.hget("myhash", "field1")
+  "value1"
 
-      iex> Remixdb.Hash.hsetnx("myhash", "field1", "new_value")
-      0
+  iex> Remixdb.Hash.hsetnx("myhash", "field1", "new_value")
+  0
 
-      iex> Remixdb.Hash.hget("myhash", "field1")
-      "value1"
+  iex> Remixdb.Hash.hget("myhash", "field1")
+  "value1"
   """
   def hsetnx(hash_name, key, val) do
     GenServer.call(@name, {:hsetnx, hash_name, key, val})
@@ -155,8 +161,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hmset("myhash", ["field1", "value1", "field2", "value2"])
-      "ok"
+  iex> Remixdb.Hash.hmset("myhash", ["field1", "value1", "field2", "value2"])
+  "ok"
   """
   def hmset(hash_name, fields) do
     GenServer.call @name, {:hmset, hash_name, fields}
@@ -174,8 +180,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hmget("myhash", ["field1", "field2", "field3"])
-      ["value1", "value2", nil]
+  iex> Remixdb.Hash.hmget("myhash", ["field1", "field2", "field3"])
+  ["value1", "value2", nil]
   """
   def hmget(hash_name, fields) do
     GenServer.call @name, {:hmget, hash_name, fields}
@@ -193,8 +199,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hget("myhash", "field1")
-      "value1"
+  iex> Remixdb.Hash.hget("myhash", "field1")
+  "value1"
   """
   def hget(hash_name, key) do
     GenServer.call @name, {:hget, hash_name, key}
@@ -211,8 +217,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hlen("myhash")
-      2
+  iex> Remixdb.Hash.hlen("myhash")
+  2
   """
   def hlen(hash_name) do
     GenServer.call @name, {:hlen, hash_name}
@@ -229,8 +235,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hgetall("myhash")
-      ["field1", "value1"]
+  iex> Remixdb.Hash.hgetall("myhash")
+  ["field1", "value1"]
   """
   def hgetall(hash_name) do
     GenServer.call @name, {:hgetall, hash_name}
@@ -247,8 +253,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hkeys("myhash")
-      ["field1"]
+  iex> Remixdb.Hash.hkeys("myhash")
+  ["field1"]
   """
   def hkeys(hash_name) do
     GenServer.call @name, {:hkeys, hash_name}
@@ -265,8 +271,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hvals("myhash")
-      ["value1"]
+  iex> Remixdb.Hash.hvals("myhash")
+  ["value1"]
   """
   def hvals(hash_name) do
     GenServer.call @name, {:hvals, hash_name}
@@ -284,11 +290,11 @@ defmodule Remixdb.Hash do
   - `0` if the field does not exist.
 
   ## Example Usage
-      iex> Remixdb.Hash.hexists("myhash", "field1")
-      1
+  iex> Remixdb.Hash.hexists("myhash", "field1")
+  1
 
-      iex> Remixdb.Hash.hexists("myhash", "field3")
-      0
+  iex> Remixdb.Hash.hexists("myhash", "field3")
+  0
   """
   def hexists(hash_name, key) do
     GenServer.call @name, {:hexists, hash_name, key}
@@ -306,14 +312,14 @@ defmodule Remixdb.Hash do
   - `0` if the field does not exist.
 
   ## Example Usage
-      iex> Remixdb.Hash.hset("myhash", "field1", "value1")
-      1
+  iex> Remixdb.Hash.hset("myhash", "field1", "value1")
+  1
 
-      iex> Remixdb.Hash.hstrlen("myhash", "field1")
-      6
+  iex> Remixdb.Hash.hstrlen("myhash", "field1")
+  6
 
-      iex> Remixdb.Hash.hstrlen("myhash", "field2")
-      0
+  iex> Remixdb.Hash.hstrlen("myhash", "field2")
+  0
   """
   def hstrlen(hash_name, key) do
     GenServer.call @name, {:hstrlen, hash_name, key}
@@ -331,8 +337,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hdel("myhash", ["field1"])
-      1
+  iex> Remixdb.Hash.hdel("myhash", ["field1"])
+  1
   """
   def hdel(hash_name, keys) do
     GenServer.call @name, {:hdel, hash_name, keys}
@@ -351,8 +357,8 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.hincrby("myhash", "counter", 5)
-      5
+  iex> Remixdb.Hash.hincrby("myhash", "counter", 5)
+  5
   """
   def hincrby(hash_name, key, amt) do
     GenServer.call @name, {:hincrby, hash_name, key, amt}
@@ -371,100 +377,99 @@ defmodule Remixdb.Hash do
 
   ## Example Usage
 
-      iex> Remixdb.Hash.rename("myhash", "newhash")
-      true
+  iex> Remixdb.Hash.rename("myhash", "newhash")
+  true
   """
   def rename(old_name, new_name) do
     GenServer.call @name, {:rename, old_name, new_name}
   end
 
-  def handle_call({:hincrby, hash_name, key, amt}, _from, state) do
-    old_map = Map.get(state, hash_name)
+  def handle_call({:hincrby, hash_name, key, amt}, _from, table) do
+    hash = get_hash(table, hash_name)
 
-    new_val = Counter.incrby Map.get(old_map, key), amt
-    new_map = Map.put(old_map, key, new_val)
-    new_state = state |> Map.put(hash_name, new_map)
+    new_val = Counter.incrby Map.get(hash, key), amt
+    new_hash = Map.put(hash, key, new_val)
 
-    {:reply, new_val, new_state}
+    true = put_hash(table, hash_name, new_hash)
+
+    {:reply, new_val, table}
   end
 
-  def handle_call({:hdel, hash_name, keys}, _from, state) do
-    old_map = Map.get(state, hash_name, Map.new)
+  def handle_call({:hdel, hash_name, keys}, _from, table) do
+    hash = get_hash(table, hash_name)
 
-    num_deleted = keys
-    |> Enum.count(fn(kk) ->
-      Map.has_key? old_map, kk
+    num_deleted = Enum.count(keys, fn(kk) ->
+      Map.has_key? hash, kk
     end)
 
-    new_map = keys
-    |> Enum.reduce(old_map, fn(kk, acc) ->
+    new_hash = Enum.reduce(keys, hash, fn(kk, acc) ->
       Map.delete(acc, kk)
     end)
 
-    new_state = Map.put(state, hash_name, new_map)
+    true = put_hash(table, hash_name, new_hash)
 
-    {:reply, num_deleted, new_state}
+    {:reply, num_deleted, table}
   end
 
-  def handle_call({:hstrlen, hash_name, key}, _from, state) do
-    res = Map.get(state, hash_name, Map.new)
+  def handle_call({:hstrlen, hash_name, key}, _from, table) do
+    hash = get_hash(table, hash_name)
+    res = hash
     |> Map.get(key, "")
     |> :erlang.byte_size
 
-    {:reply, res, state}
+    {:reply, res, table}
   end
 
-  def handle_call({:hkeys, hash_name}, _from, state) do
-    keys = state
-    |> Map.get(hash_name, Map.new)
-    |> Map.keys
-    {:reply, keys, state}
+  def handle_call({:hkeys, hash_name}, _from, table) do
+    hash = get_hash(table, hash_name)
+    keys = hash |> Map.keys
+
+    {:reply, keys, table}
   end
 
-  def handle_call({:hvals, hash_name}, _from, state) do
-    vals = state
-    |> Map.get(hash_name, Map.new)
-    |> Map.values
+  def handle_call({:hvals, hash_name}, _from, table) do
+    hash = get_hash(table, hash_name)
+    vals = hash |> Map.values
 
-    {:reply, vals, state}
+    {:reply, vals, table}
   end
 
-  def handle_call({:hget, hash_name, key_name}, _from, state) do
-    val = state
-    |> Map.get(hash_name, Map.new)
-    |> Map.get(key_name)
+  def handle_call({:hget, hash_name, key_name}, _from, table) do
+    hash = get_hash(table, hash_name)
+    val = Map.get(hash, key_name)
 
-    {:reply, val, state}
+    {:reply, val, table}
   end
 
-  def handle_call({:hgetall, hash_name}, _from, state) do
-    vals = state
-    |> Map.get(hash_name, Map.new)
+  def handle_call({:hgetall, hash_name}, _from, table) do
+    hash = get_hash(table, hash_name)
+    vals = hash
     |> Enum.reduce([], fn({kk, vv}, acc) ->
       [kk|[vv|acc]]
     end)
     
-    {:reply, vals, state}
+    {:reply, vals, table}
   end
 
-  def handle_call(:flushall, _from, _state) do
-    {:reply, :ok, Map.new}
+  def handle_call(:flushall, _from, table) do
+    :ets.delete(table)
+    new_table = :ets.new(@name, [:named_table, :public, read_concurrency: true, write_concurrency: true])
+    {:reply, :ok, new_table}
   end
 
-  def handle_call({:hmget, hash_name, fields}, _from, state) do
-    map = Map.get(state, hash_name, Map.new)
+  def handle_call({:hmget, hash_name, fields}, _from, table) do
+    map = get_hash(table, hash_name)
 
     res = fields
     |> Enum.map(fn(key) ->
       Map.get(map, key)
     end)
 
-    {:reply, res, state}
+    {:reply, res, table}
   end
 
-  def handle_call({:hmset, hash_name, fields}, _from, state) do
-    old_map = state
-    |> Map.get(hash_name, Map.new)
+  def handle_call({:hmset, hash_name, fields}, _from, table) do
+    old_hash = get_hash(table, hash_name)
 
     fields_map = fields
     |> Enum.chunk_every(2)
@@ -472,75 +477,83 @@ defmodule Remixdb.Hash do
       {k, v}
     end)
 
-    new_map = Map.merge(old_map, fields_map)
-
-    new_state = Map.put(state, hash_name, new_map)
-
-    {:reply, "OK", new_state}
+    new_hash = Map.merge(old_hash, fields_map)
+    true = put_hash(table, hash_name, new_hash)
+    {:reply, "OK", table}
   end
 
-  def handle_call({:hsetnx, hash_name, key, val}, _from, state) do
-    old_map = state |> Map.get(hash_name, Map.new)
-
-    {res, new_state} = case Map.get(old_map, key, nil) do
-                         nil ->
-                           new_map = old_map |> Map.put(key, val)
-                           new_state = Map.put(state, hash_name, new_map)
-                           {1, new_state}
-                         _ ->
-                           {0, state}
-                       end
-    {:reply, res, new_state}
-
+  def handle_call({:hsetnx, hash_name, key, val}, _from, table) do
+    old_hash = get_hash(table, hash_name)
+    case Map.has_key?(old_hash, key) do
+      false ->
+        new_hash = Map.put(old_hash, key, val)
+        true = put_hash(table, hash_name, new_hash)
+        {:reply, 1, table}
+      _ ->
+        {:reply, 0, table}
+    end
   end
 
-  def handle_call({:hset, hash_name, key, val}, _from, state) do
-    old_map = state
-    |> Map.get(hash_name, Map.new)
+  def handle_call({:hset, hash_name, key, val}, _from, table) do
+    old_hash =  get_hash(table, hash_name)
+    new_hash = old_hash |> Map.put(key, val)
+    true = put_hash(table, hash_name, new_hash)
 
-    new_map = old_map
-    |> Map.put(key, val)
-
-    updated_state = state
-    |> Map.put(hash_name, new_map)
-
-    {:reply, key_inserted?(old_map, key), updated_state}
+    {:reply, key_inserted?(old_hash, key), table}
   end
 
-  def handle_call(:dbsize, _from, state) do
-    sz = state |> Map.keys |> Enum.count
-    {:reply, sz, Map.new}
+  def handle_call(:dbsize, _from, table) do
+    sz = :ets.info(table, :size)
+    {:reply, sz, table}
   end
 
-  def handle_call({:hlen, hash_name}, _from, state) do
-    sz = state |> Map.get(hash_name, Map.new) |> Enum.count
-    {:reply, sz, state}
+  def handle_call({:hlen, hash_name}, _from, table) do
+    sz = get_hash(table, hash_name) |> Map.keys |> length()
+    {:reply, sz, table}
   end
 
-  def handle_call({:hexists, hash_name, key}, _from, state) do
-    res = state
-    |> Map.get(hash_name, Map.new)
-    |> has_key?(key)
-
-    {:reply, res, state}
+  def handle_call({:hexists, hash_name, key}, _from, table) do
+    res = get_hash(table, hash_name) |> has_key?(key)
+    {:reply, res, table}
   end
 
-  def handle_call({:rename, old_name, new_name}, _from, state) do
-  {res, new_state} = Remixdb.Renamer.rename state, old_name, new_name
-  {:reply, res, new_state}
-end
+  def handle_call({:rename, old_name, new_name}, _from, table) do
+    hash = get_hash(table, old_name)
+    true = put_hash(table, new_name, hash)
+    true = delete_hash(table, old_name)
 
-defp key_inserted?(map, key) do
-  case has_key?(map, key) do
-    1 -> 0
-    0 -> 1
-  end
-end
+    # If the hash did not exist in the first place return false/else true
+    res = (hash !== %{})
 
-defp has_key?(hash, key) do
-  case Map.has_key?(hash, key) do
-    true -> 1
-    _ -> 0
+    {:reply, res, table}
   end
-end
+
+  defp key_inserted?(map, key) do
+    case has_key?(map, key) do
+      1 -> 0
+      0 -> 1
+    end
+  end
+
+  defp has_key?(hash, key) do
+    case Map.has_key?(hash, key) do
+      true -> 1
+      _ -> 0
+    end
+  end
+
+  defp get_hash(table, hash_name) do
+    case :ets.lookup(table, hash_name) do
+      [] -> %{}
+      [{^hash_name, hash}] -> hash
+    end
+  end
+
+  defp put_hash(table, hash_name, hash) do
+    :ets.insert(table, {hash_name, hash})
+  end
+
+  defp delete_hash(table, hash_name) do
+    :ets.delete(table, hash_name)
+  end
 end
