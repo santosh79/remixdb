@@ -385,70 +385,66 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hincrby, hash_name, key, amt}, _from, table) do
-    hash = get_hash(table, hash_name)
-
-    new_val = Counter.incrby Map.get(hash, key), amt
-    new_hash = Map.put(hash, key, new_val)
-
-    true = put_hash(table, hash_name, new_hash)
-
+    old_val = get_hash_key(table, hash_name, key)
+    new_val = Counter.incrby old_val, amt
+    true = put_hash_key_val(table, hash_name, key, new_val)
     {:reply, new_val, table}
   end
 
   def handle_call({:hdel, hash_name, keys}, _from, table) do
-    hash = get_hash(table, hash_name)
-
     num_deleted = Enum.count(keys, fn(kk) ->
-      Map.has_key? hash, kk
+      case get_hash_key(table, hash_name, kk) do
+        nil -> false
+        _ ->
+          true = delete_hash_entry(table, hash_name, kk)
+          true
+      end
     end)
-
-    new_hash = Enum.reduce(keys, hash, fn(kk, acc) ->
-      Map.delete(acc, kk)
-    end)
-
-    true = put_hash(table, hash_name, new_hash)
 
     {:reply, num_deleted, table}
   end
 
   def handle_call({:hstrlen, hash_name, key}, _from, table) do
-    hash = get_hash(table, hash_name)
-    res = hash
-    |> Map.get(key, "")
-    |> :erlang.byte_size
+    res = get_hash_key(table, hash_name, key) |>
+      :erlang.byte_size
 
     {:reply, res, table}
   end
 
   def handle_call({:hkeys, hash_name}, _from, table) do
-    hash = get_hash(table, hash_name)
-    keys = hash |> Map.keys
-
+    # Create a match spec that matches any entry whose key is a tuple {hash_name, field}
+    # and returns the field.
+    keys = get_all_keys(table, hash_name)
     {:reply, keys, table}
   end
 
   def handle_call({:hvals, hash_name}, _from, table) do
-    hash = get_hash(table, hash_name)
-    vals = hash |> Map.values
-
+    # The match spec: match any tuple whose key is {hash_name, _} and capture the value.
+    match_spec = [{{{hash_name, :"$1"}, :"$2"}, [], [:"$2"]}]
+    
+    vals = :ets.select(table, match_spec)
     {:reply, vals, table}
   end
 
   def handle_call({:hget, hash_name, key_name}, _from, table) do
-    hash = get_hash(table, hash_name)
-    val = Map.get(hash, key_name)
-
+    val = get_hash_key(table, hash_name, key_name)
     {:reply, val, table}
   end
 
   def handle_call({:hgetall, hash_name}, _from, table) do
-    hash = get_hash(table, hash_name)
-    vals = hash
-    |> Enum.reduce([], fn({kk, vv}, acc) ->
-      [kk|[vv|acc]]
-    end)
+    # The match spec:
+    #   - Pattern: keys matching {hash_name, $"$1"} with value $"$2"
+    #   - No guards.
+    #   - Return a tuple {field, value} for each match.
+    match_spec = [{{{hash_name, :"$1"}, :"$2"}, [], [ {:"$1", :"$2"} ]}]
     
-    {:reply, vals, table}
+    # ETS.select returns a list of tuples, e.g. [{field1, value1}, {field2, value2}, ...]
+    result = :ets.select(table, match_spec)
+    
+    # If you want the results as an interleaved list [field1, value1, field2, value2, ...], you can flatten:
+    interleaved = Enum.flat_map(result, fn {k, v} -> [k, v] end)
+    
+    {:reply, interleaved, table}
   end
 
   def handle_call(:flushall, _from, table) do
@@ -458,48 +454,43 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hmget, hash_name, fields}, _from, table) do
-    map = get_hash(table, hash_name)
-
     res = fields
     |> Enum.map(fn(key) ->
-      Map.get(map, key)
+      get_hash_key(table, hash_name, key)
     end)
 
     {:reply, res, table}
   end
 
   def handle_call({:hmset, hash_name, fields}, _from, table) do
-    old_hash = get_hash(table, hash_name)
-
-    fields_map = fields
+    fields
     |> Enum.chunk_every(2)
-    |> Map.new(fn([k, v]) ->
-      {k, v}
+    |> Enum.each(fn([k, v]) ->
+      true = put_hash_key_val(table, hash_name, k, v)
     end)
 
-    new_hash = Map.merge(old_hash, fields_map)
-    true = put_hash(table, hash_name, new_hash)
     {:reply, "OK", table}
   end
 
   def handle_call({:hsetnx, hash_name, key, val}, _from, table) do
-    old_hash = get_hash(table, hash_name)
-    case Map.has_key?(old_hash, key) do
-      false ->
-        new_hash = Map.put(old_hash, key, val)
-        true = put_hash(table, hash_name, new_hash)
+    case get_hash_key(table, hash_name, key) do
+      nil ->
+        true = put_hash_key_val(table, hash_name, key, val)
         {:reply, 1, table}
-      _ ->
+      _ -> 
         {:reply, 0, table}
     end
   end
 
   def handle_call({:hset, hash_name, key, val}, _from, table) do
-    old_hash =  get_hash(table, hash_name)
-    new_hash = old_hash |> Map.put(key, val)
-    true = put_hash(table, hash_name, new_hash)
-
-    {:reply, key_inserted?(old_hash, key), table}
+    old_val = get_hash_key(table, hash_name, key)
+    true = put_hash_key_val(table, hash_name, key, val)
+    key_existed_before = (old_val !== nil)
+    res = case key_existed_before do
+            true -> 0
+            false -> 1
+          end
+    {:reply, res, table}
   end
 
   def handle_call(:dbsize, _from, table) do
@@ -508,52 +499,52 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hlen, hash_name}, _from, table) do
-    sz = get_hash(table, hash_name) |> Map.keys |> length()
+    sz = get_all_keys(table, hash_name) |> length()
     {:reply, sz, table}
   end
 
   def handle_call({:hexists, hash_name, key}, _from, table) do
-    res = get_hash(table, hash_name) |> has_key?(key)
+    res = (get_hash_key(table, hash_name, key) !== nil)
     {:reply, res, table}
   end
 
   def handle_call({:rename, old_name, new_name}, _from, table) do
-    hash = get_hash(table, old_name)
-    true = put_hash(table, new_name, hash)
-    true = delete_hash(table, old_name)
-
-    # If the hash did not exist in the first place return false/else true
-    res = (hash !== %{})
-
-    {:reply, res, table}
-  end
-
-  defp key_inserted?(map, key) do
-    case has_key?(map, key) do
-      1 -> 0
-      0 -> 1
+    ent = get_all_entries(table, old_name) 
+    keys = Map.keys(ent)
+    case length(keys) do
+      0 -> {:reply, false, table}
+      _ ->
+        Enum.map(keys, fn(k) ->
+          val = Map.get(ent, k)
+          true = delete_hash_entry(table, old_name, k)
+          true = put_hash_key_val(table, new_name, k, val)
+        end)
+        {:reply, true, table}
     end
   end
 
-  defp has_key?(hash, key) do
-    case Map.has_key?(hash, key) do
-      true -> 1
-      _ -> 0
+  defp get_hash_key(table, hash_name, key) do
+    case :ets.lookup(table, {hash_name, key}) do
+      [] -> nil
+      [{{^hash_name, ^key}, val}] -> val        
     end
   end
 
-  defp get_hash(table, hash_name) do
-    case :ets.lookup(table, hash_name) do
-      [] -> %{}
-      [{^hash_name, hash}] -> hash
-    end
+  defp put_hash_key_val(table, hash_name, key, val) do
+    :ets.insert(table, {{hash_name, key}, val})
   end
 
-  defp put_hash(table, hash_name, hash) do
-    :ets.insert(table, {hash_name, hash})
+  defp delete_hash_entry(table, hash_name, key) do
+    :ets.delete(table, {hash_name, key})
   end
 
-  defp delete_hash(table, hash_name) do
-    :ets.delete(table, hash_name)
+  defp get_all_keys(table, hash_name) do
+    match_spec = [{{{hash_name, :"$1"}, :_}, [], [:"$1"]}]
+    :ets.select(table, match_spec)
+  end
+
+  defp get_all_entries(table, hash_name) do
+    :ets.match_object(table, {{hash_name, :_}, :_})
+    |> Enum.into(%{}, fn {{_hash, field}, val} -> {field, val} end)
   end
 end
