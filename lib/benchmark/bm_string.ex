@@ -94,7 +94,7 @@ defmodule Remixdb.BM.String do
         kvs
         |> Enum.map(fn {key, val} ->
           Task.async(fn ->
-            :ok = client |> :eredis.q(["SET", key, val])
+            {:ok, "OK"} = client |> :eredis.q(["SET", key, val])
           end)
         end)
         |> Enum.each(&Task.await/1)
