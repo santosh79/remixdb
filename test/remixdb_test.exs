@@ -740,6 +740,7 @@ defmodule RemixdbTest do
       {:ok, val} = client |> :eredis.q(["HSET", my_hash, "name", "john"])
       assert val === "0"
       client |> :eredis.q(["HSET", my_hash, "age", "30"])
+      assert val === "1"
 
       {:ok, val} = client |> :eredis.q(["HLEN", my_hash])
       assert val === "2"
