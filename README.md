@@ -62,6 +62,80 @@ We need Databases that are fault-tolerant, highly available and that can scale a
 ## Status
 This library is still being worked on, so it does NOT support all of redis' commands -- that being said, the plan is to get it to full compliance with Redis' single server commands, ASAP. Redis Cluster is something I do not believe in - since I do not understand the Availability Guarantees it provides.
 
+## Module Architecture
+
+```
+                        +-------------------+
+                        |    Client App     |
+                        +---------+---------+
+                                  |
+                                  | TCP/Redis Protocol
+                                  v
++----------------------------------------------------------------+
+|                   Remixdb Application                          |
+|  +-------------------+            +-------------------+        |
+|  |    TCP Server     |<---------->|   Redis Parser    |        |
+|  +---------+---------+            +---------+---------+        |
+|            |                              |                    |
+|            |    Parsed Commands           |                    |
+|            v                              v                    |
+|    +-----------------------------------------------+           |
+|    |               Command Router                 |            |
+|    +----------------------+-----------------------+            |
+|           |            |             |         |               |
+|           v            v             v         v               |
+|    +-----------+  +-----------+  +-----------+  +-----------+  |
+|    |  String   |  |   Hash    |  |   List    |  |    Set    |  |
+|    |  Module   |  |  Module   |  |  Module   |  |  Module   |  |
+|    +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+  |
+|           |            |             |               |         |
+|           |            |             |               |         |
+|           v            v             v               v         |
+|    +-----------------------------------------------+           |
+|    |            Data Storage Layer                 |           |
+|    |   (GenServer state and/or ETS tables)         |           |
+|    +-----------------------------------------------+           |
++----------------------------------------------------------------+
+                                  ^
+                                  | Supervised by
+                                  v
++---------------------------------------------------------------+
+|                     Supervision Tree                          |
+|                                                               |
+|    +------------------------+                                 |
+|    |   Remixdb Supervisor   |                                 |
+|    +-----------+------------+                                 |
+|                |                                              |
+|         +------+-----+                                        |
+|         |            |                                        |
+|         v            v                                        |
+|    +----------+   +---------------------------+               |
+|    | TcpServer|   | Datastructures Supervisor |               |
+|    |          |   +-----------+---------------+               |
+|    +----------+               |                               |
+|                      +--------+--------+                      |
+|                      |        |        |                      |
+|                      v        v        v                      |
+|                  +--------+ +--------+ +----------+           |
+|                  | String | |  Hash  | | List/Set |           |
+|                  +--------+ +--------+ +----------+           |
++---------------------------------------------------------------+
+                                  |
+                                  | Uses
+                                  v
++---------------------------------------------------------------+
+|                      Utility Modules                          |
+|  +----------+   +----------+   +---------------------+        |
+|  | Renamer  |   | Counter  |   |  Other Utilities    |        |
+|  +----------+   +----------+   +---------------------+        |
++---------------------------------------------------------------+
+
++---------------------------------------------------------------+
+|                     Benchmark Suite                           |
+|        (Independent tools for measuring performance)          |
++---------------------------------------------------------------+
+```
+
 
 ## Clustering and Master Read Replica setup with Automatic Failover
 This will happen, soon!
