@@ -13,7 +13,7 @@ defmodule Remixdb.TcpServer do
   end
 
   def handle_info(:long_init, %{port: port} = state) do
-    {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true, backlog: 1_000])
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true, backlog: 4096])
     :io.format("~p at port: ~p ~n", [__MODULE__, port])
 
     updated_state = state |> Map.put(:socket, socket)

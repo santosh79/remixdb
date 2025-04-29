@@ -199,7 +199,7 @@ defmodule RemixdbTest do
       assert val === vv
 
       unknown_key = :erlang.make_ref() |> inspect()
-      {:ok, val} = client |> :eredis.q(["RENAME", unknown_key, :erlang.make_ref() |> inspect()])
+      {:error, val} = client |> :eredis.q(["RENAME", unknown_key, :erlang.make_ref() |> inspect()])
       assert val === "ERR no such key"
     end
 
@@ -591,10 +591,10 @@ defmodule RemixdbTest do
       {:ok, val} = client |> :eredis.q(["SREM", key1] ++ full_list)
       assert val === "0"
 
-      # SantoshTODO
-      # val = client |> :eredis.q(["SREM", "key1"] ++ full_list)
-      # val = client |> :eredis.q(["EXISTS", "key1"])
-      # assert val === "0"
+      {:ok, val} = client |> :eredis.q(["SREM", "key1"] ++ full_list)
+      assert val === "0"
+      {:ok, val} = client |> :eredis.q(["EXISTS", "key1"])
+      assert val === "0"
     end
 
     test "SPOP", %{client: client} do
@@ -739,8 +739,9 @@ defmodule RemixdbTest do
       assert val === "1"
       {:ok, val} = client |> :eredis.q(["HSET", my_hash, "name", "john"])
       assert val === "0"
+      # Adding a new key to an existing hash
       client |> :eredis.q(["HSET", my_hash, "age", "30"])
-      assert val === "1"
+      assert val === "0"
 
       {:ok, val} = client |> :eredis.q(["HLEN", my_hash])
       assert val === "2"

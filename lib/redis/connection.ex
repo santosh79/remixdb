@@ -103,8 +103,8 @@ defmodule Remixdb.RedisConnection do
           end)
 
         case res do
-          true -> "OK"
-          _ -> "ERR no such key"
+          false -> {:error, "ERR no such key"}
+          _ -> "OK"
         end
 
       {:renamenx, [_old_name, _new_name]} ->

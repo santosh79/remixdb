@@ -405,8 +405,11 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hstrlen, hash_name, key}, _from, table) do
-    res = get_hash_key(table, hash_name, key) |>
-      :erlang.byte_size
+    val = get_hash_key(table, hash_name, key)
+    res = case val do
+            nil -> 0
+            _ -> :erlang.byte_size(val)
+    end
 
     {:reply, res, table}
   end
@@ -432,19 +435,10 @@ defmodule Remixdb.Hash do
   end
 
   def handle_call({:hgetall, hash_name}, _from, table) do
-    # The match spec:
-    #   - Pattern: keys matching {hash_name, $"$1"} with value $"$2"
-    #   - No guards.
-    #   - Return a tuple {field, value} for each match.
-    match_spec = [{{{hash_name, :"$1"}, :"$2"}, [], [ {:"$1", :"$2"} ]}]
-    
-    # ETS.select returns a list of tuples, e.g. [{field1, value1}, {field2, value2}, ...]
-    result = :ets.select(table, match_spec)
-    
-    # If you want the results as an interleaved list [field1, value1, field2, value2, ...], you can flatten:
-    interleaved = Enum.flat_map(result, fn {k, v} -> [k, v] end)
-    
-    {:reply, interleaved, table}
+    result =
+      get_all_entries(table, hash_name)
+      |> Enum.flat_map(fn({k, v}) -> [k, v] end)
+    {:reply, result, table}
   end
 
   def handle_call(:flushall, _from, table) do
