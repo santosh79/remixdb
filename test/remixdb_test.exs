@@ -180,7 +180,6 @@ defmodule RemixdbTest do
       assert val === "-2"
     end
 
-    @tag current: true
     test "RENAME", %{client: client} do
       kk = :erlang.make_ref() |> inspect()
       vv = :erlang.make_ref() |> inspect()
@@ -203,7 +202,6 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
-    @tag skip: true
     test "RENAMENX", %{client: client} do
       client |> :eredis.q(["SET", "mykey", "hello"])
       {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
@@ -213,8 +211,7 @@ defmodule RemixdbTest do
       {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
       assert val === "0"
 
-      {:ok, val} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
-      assert val === "ERR no such key"
+      {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
     end
 
     ##
