@@ -1,4 +1,4 @@
-defmdefmodule Remixdb.List do
+defmodule Remixdb.List do
   use GenServer
 
   @name :remixdb_list
