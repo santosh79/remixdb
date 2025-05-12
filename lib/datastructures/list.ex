@@ -1,75 +1,27 @@
-defmodule Remixdb.List do
-  @moduledoc """
-  A Redis-like list store implemented with GenServer.
-
-  This module provides operations similar to Redis lists, such as:
-  - Adding elements to the left or right of a list.
-  - Popping elements from the left or right of a list.
-  - Getting elements by index, range, or trimming the list.
-  - Renaming keys and flushing all data.
-
-  ## Features
-
-  - Store and manipulate lists identified by keys.
-  - Perform atomic list operations via GenServer.
-  - Useful for in-memory data structures with list semantics.
-
-  ## Example Usage
-
-      iex> Remixdb.List.start_link(:ok)
-      {:ok, pid}
-
-      iex> Remixdb.List.rpush("mylist", ["a", "b", "c"])
-      3
-
-      iex> Remixdb.List.lrange("mylist", 0, -1)
-      ["a", "b", "c"]
-
-      iex> Remixdb.List.lpop("mylist")
-      "a"
-
-      iex> Remixdb.List.rpoplpush("mylist", "anotherlist")
-      "c"
-
-      iex> Remixdb.List.dbsize()
-      2
-  """
-
+defmdefmodule Remixdb.List do
   use GenServer
 
   @name :remixdb_list
 
-  @doc """
-  Starts the `Remixdb.List` GenServer.
-
-  ## Parameters
-    - `_args` (any): Arguments for the GenServer (currently ignored).
-
-  ## Returns
-    - `{:ok, pid}` on success.
-
-  ## Example Usage
-
-      iex> Remixdb.List.start_link(:ok)
-  """
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
   end
 
   def init(:ok) do
-    {:ok, Map.new()}
+    table = :ets.new(@name, [:set, :private, {:write_concurrency, :auto}])
+    {:ok, table}
   end
 
   @doc """
   Flushes all lists in the store.
 
   ## Returns
-    - `:ok` on success.
+  - `:ok` on success.
 
   ## Example Usage
 
-      iex> Remixdb.List.flushall()
-      :ok
+  iex> Remixdb.List.flushall()
+  :ok
   """
   def flushall() do
     GenServer.call(@name, :flushall)
@@ -79,12 +31,12 @@ defmodule Remixdb.List do
   Gets the total number of lists in the store.
 
   ## Returns
-    - The size of the database as an integer.
+  - The size of the database as an integer.
 
   ## Example Usage
 
-      iex> Remixdb.List.dbsize()
-      2
+  iex> Remixdb.List.dbsize()
+  2
   """
   def dbsize() do
     GenServer.call(@name, :dbsize)
@@ -94,15 +46,15 @@ defmodule Remixdb.List do
   Gets the length of a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
+  - `list_name` (binary): The name of the list.
 
   ## Returns
-    - The number of elements in the list.
+  - The number of elements in the list.
 
   ## Example Usage
 
-      iex> Remixdb.List.llen("mylist")
-      3
+  iex> Remixdb.List.llen("mylist")
+  3
   """
   def llen(list_name) do
     GenServer.call(@name, {:llen, list_name})
@@ -112,17 +64,17 @@ defmodule Remixdb.List do
   Gets a range of elements from a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `start` (integer): The start index (inclusive).
-    - `stop` (integer): The stop index (inclusive).
+  - `list_name` (binary): The name of the list.
+  - `start` (integer): The start index (inclusive).
+  - `stop` (integer): The stop index (inclusive).
 
   ## Returns
-    - A list of elements in the specified range.
+  - A list of elements in the specified range.
 
   ## Example Usage
 
-      iex> Remixdb.List.lrange("mylist", 0, -1)
-      ["a", "b", "c"]
+  iex> Remixdb.List.lrange("mylist", 0, -1)
+  ["a", "b", "c"]
   """
   def lrange(list_name, start, stop) do
     GenServer.call(@name, {:lrange, list_name, start, stop})
@@ -132,17 +84,17 @@ defmodule Remixdb.List do
   Trims a list to the specified range.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `start` (integer): The start index (inclusive).
-    - `stop` (integer): The stop index (inclusive).
+  - `list_name` (binary): The name of the list.
+  - `start` (integer): The start index (inclusive).
+  - `stop` (integer): The stop index (inclusive).
 
   ## Returns
-    - `:ok` on success.
+  - `:ok` on success.
 
   ## Example Usage
 
-      iex> Remixdb.List.ltrim("mylist", 0, 1)
-      :ok
+  iex> Remixdb.List.ltrim("mylist", 0, 1)
+  :ok
   """
   def ltrim(list_name, start, stop) do
     GenServer.call(@name, {:ltrim, list_name, start, stop})
@@ -152,18 +104,18 @@ defmodule Remixdb.List do
   Sets the value at a specific index in a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `idx` (integer): The index to set.
-    - `val` (any): The value to set.
+  - `list_name` (binary): The name of the list.
+  - `idx` (integer): The index to set.
+  - `val` (any): The value to set.
 
   ## Returns
-    - `:ok` on success.
-    - `{:error, "ERR index out of range"}` if the index is invalid.
+  - `:ok` on success.
+  - `{:error, "ERR index out of range"}` if the index is invalid.
 
   ## Example Usage
 
-      iex> Remixdb.List.lset("mylist", 1, "new_value")
-      :ok
+  iex> Remixdb.List.lset("mylist", 1, "new_value")
+  :ok
   """
   def lset(list_name, idx, val) when is_integer(idx) do
     GenServer.call(@name, {:lset, list_name, idx, val})
@@ -173,16 +125,16 @@ defmodule Remixdb.List do
   Gets the value at a specific index in a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `idx` (integer): The index to retrieve.
+  - `list_name` (binary): The name of the list.
+  - `idx` (integer): The index to retrieve.
 
   ## Returns
-    - The value at the specified index, or `nil` if the index is invalid.
+  - The value at the specified index, or `nil` if the index is invalid.
 
   ## Example Usage
 
-      iex> Remixdb.List.lindex("mylist", 1)
-      "b"
+  iex> Remixdb.List.lindex("mylist", 1)
+  "b"
   """
   def lindex(list_name, idx) when is_integer(idx) do
     GenServer.call(@name, {:lindex, list_name, idx})
@@ -197,16 +149,16 @@ defmodule Remixdb.List do
   Appends one or more elements to the right of a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `items` (list): The elements to append.
+  - `list_name` (binary): The name of the list.
+  - `items` (list): The elements to append.
 
   ## Returns
-    - The new length of the list.
+  - The new length of the list.
 
   ## Example Usage
 
-      iex> Remixdb.List.rpush("mylist", ["d", "e"])
-      5
+  iex> Remixdb.List.rpush("mylist", ["d", "e"])
+  5
   """
   def rpush(list_name, items) do
     GenServer.call(@name, {:rpush, list_name, items})
@@ -216,16 +168,16 @@ defmodule Remixdb.List do
   Appends one or more elements to the right of a list if the list exists.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `items` (list): The elements to append.
+  - `list_name` (binary): The name of the list.
+  - `items` (list): The elements to append.
 
   ## Returns
-    - The new length of the list, or `0` if the list does not exist.
+  - The new length of the list, or `0` if the list does not exist.
 
   ## Example Usage
 
-      iex> Remixdb.List.rpushx("mylist", ["f"])
-      6
+  iex> Remixdb.List.rpushx("mylist", ["f"])
+  6
   """
   def rpushx(list_name, items) do
     GenServer.call(@name, {:rpushx, list_name, items})
@@ -235,16 +187,16 @@ defmodule Remixdb.List do
   Prepend one or more elements to the left of a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `items` (list): The elements to prepend.
+  - `list_name` (binary): The name of the list.
+  - `items` (list): The elements to prepend.
 
   ## Returns
-    - The new length of the list.
+  - The new length of the list.
 
   ## Example Usage
 
-      iex> Remixdb.List.lpush("mylist", ["x", "y"])
-      5
+  iex> Remixdb.List.lpush("mylist", ["x", "y"])
+  5
   """
   def lpush(list_name, items) do
     GenServer.call(@name, {:lpush, list_name, items})
@@ -254,16 +206,16 @@ defmodule Remixdb.List do
   Appends one or more elements to the left of a list if the list exists.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
-    - `items` (list): The elements to append.
+  - `list_name` (binary): The name of the list.
+  - `items` (list): The elements to append.
 
   ## Returns
-    - The new length of the list, or `0` if the list does not exist.
+  - The new length of the list, or `0` if the list does not exist.
 
   ## Example Usage
 
-      iex> Remixdb.List.lpushx("mylist", ["f"])
-      6
+  iex> Remixdb.List.lpushx("mylist", ["f"])
+  6
   """
   def lpushx(list_name, items) do
     GenServer.call(@name, {:lpushx, list_name, items})
@@ -273,15 +225,15 @@ defmodule Remixdb.List do
   Removes and returns the first element of a list.
 
   ## Parameters
-    - `list_name` (binary): The name of the list.
+  - `list_name` (binary): The name of the list.
 
   ## Returns
-    - The first element of the list, or `nil` if the list is empty.
+  - The first element of the list, or `nil` if the list is empty.
 
   ## Example Usage
 
-      iex> Remixdb.List.lpop("mylist")
-      "a"
+  iex> Remixdb.List.lpop("mylist")
+  "a"
   """
   def lpop(list_name) do
     GenServer.call(@name, {:lpop, list_name})
@@ -298,8 +250,8 @@ defmodule Remixdb.List do
 
   ## Example Usage
 
-      iex> Remixdb.List.rpop("mylist")
-      "c"
+  iex> Remixdb.List.rpop("mylist")
+  "c"
   """
   def rpop(list_name) do
     GenServer.call(@name, {:rpop, list_name})
@@ -309,227 +261,271 @@ defmodule Remixdb.List do
   Removes the last element of one list and prepends it to another.
 
   ## Parameters
-    - `src` (binary): The source list.
-    - `dest` (binary): The destination list.
+  - `src` (binary): The source list.
+  - `dest` (binary): The destination list.
 
   ## Returns
-    - The value moved, or `nil` if the source list is empty.
+  - The value moved, or `nil` if the source list is empty.
 
   ## Example Usage
 
-      iex> Remixdb.List.rpoplpush("mylist", "anotherlist")
-      "c"
+  iex> Remixdb.List.rpoplpush("mylist", "anotherlist")
+  "c"
   """
   def rpoplpush(src, dest) do
     GenServer.call(@name, {:rpoplpush, src, dest})
   end
 
+
   @doc """
   Renames an existing list to a new name.
 
   ## Parameters
-    - `old_name` (binary): The current name of the list.
-    - `new_name` (binary): The new name for the list.
+  - `old_name` (binary): The current name of the list.
+  - `new_name` (binary): The new name for the list.
 
   ## Returns
-    - `true` if the rename was successful.
-    - `false` if the old name does not exist.
+  - `true` if the rename was successful.
+  - `false` if the old name does not exist.
 
   ## Example Usage
 
-      iex> Remixdb.List.rename("mylist", "newlist")
-      true
+  iex> Remixdb.List.rename("mylist", "newlist")
+  true
   """
   def rename(old_name, new_name) do
     GenServer.call(@name, {:rename, old_name, new_name})
   end
 
-  def handle_call({:rename, old_name, new_name}, _from, state) do
-    {res, new_state} = Remixdb.Renamer.rename(state, old_name, new_name)
-    {:reply, res, new_state}
+
+  # Example implementation adjustments for ETS
+
+  def handle_call(:flushall, _from, table) do
+    :ets.delete(table)
+    new_table = :ets.new(@name, [:named_table, :set, :public])
+    {:reply, :ok, new_table}
   end
 
-  def handle_call({:rpoplpush, src, dest}, _from, state) do
-    src_list = state |> Map.get(src, [])
-    dest_list = state |> Map.get(dest, [])
-    {val, new_src, new_dest} = rpoplpush_helper(src_list, dest_list)
-    new_state = state |> Map.put(src, new_src) |> Map.put(dest, new_dest)
-    {:reply, val, new_state}
+  def handle_call(:dbsize, _from, table) do
+    size = :ets.info(table, :size)
+    {:reply, size, table}
   end
 
-  def handle_call(:flushall, _from, _state) do
-    {:reply, :ok, Map.new()}
+  def handle_call({:llen, list_name}, _from, table) do
+    size =
+      :ets.lookup(table, list_name)
+      |> case do
+           [] -> 0
+           [{_, list}] -> length(list)
+         end
+
+    {:reply, size, table}
   end
 
-  def handle_call(:dbsize, _from, state) do
-    sz = state |> Map.keys() |> Enum.count()
-    {:reply, sz, Map.new()}
+  # This is a simplified example for :lpush operation
+  def handle_call({:lpush, list_name, items}, _from, table) do
+    current_list =
+      case :ets.lookup(table, list_name) do
+        [] -> []
+        [{_, list}] -> list
+      end
+
+    new_list = items ++ current_list
+    true = :ets.insert(table, {list_name, new_list})
+    {:reply, length(new_list), table}
   end
 
-  def handle_call({:lset, list_name, idx, val}, _from, state) do
-    res =
-      Map.get(state, list_name, [])
-      |> update_at(idx, val)
+  def handle_call({:rpush, list_name, items}, _from, table) do
+    current_list =
+      case :ets.lookup(table, list_name) do
+        [] -> []
+        [{_, list}] -> list
+      end
 
-    case res do
-      {:error, _} ->
-        {:reply, {:error, "ERR index out of range"}, state}
-
-      {:ok, ll} ->
-        {:reply, :ok, update_state(ll, list_name, state)}
-    end
+    new_list = current_list ++ items
+    true = :ets.insert(table, {list_name, new_list})
+    {:reply, length(new_list), table}
   end
 
-  def handle_call({:lindex, list_name, idx}, _from, state) do
-    item =
-      Map.get(state, list_name)
-      |> Enum.at(idx)
+  def handle_call({:lrange, list_name, start, stop}, _from, table)
+  when is_integer(start) and is_integer(stop) do
+    list =
+      case :ets.lookup(table, list_name) do
+        [] -> []
+        [{_, val}] -> val
+      end
 
-    {:reply, item, state}
+    range = get_items_in_range(list, start, stop)
+
+    {:reply, range, table}
   end
 
-  def handle_call({:ltrim, list_name, start, stop}, from, state)
-      when is_integer(start) and is_integer(stop) do
-    GenServer.reply(from, :ok)
+  def handle_call({:rpoplpush, src, dest}, _from, table) do
+    src_list =
+      case :ets.lookup(table, src) do
+        [] -> []
+        [{_, list}] -> list
+      end
 
-    updated_list =
-      Map.get(state, list_name, [])
-      |> get_items_in_range(start, stop)
+    dest_list =
+      case :ets.lookup(table, dest) do
+        [] -> []
+        [{_, list}] -> list
+      end
 
-    {:noreply, Map.put(state, list_name, updated_list)}
-  end
-
-  def handle_call({:lrange, list_name, start, stop}, _from, state)
-      when is_integer(start) and is_integer(stop) do
-    res =
-      Map.get(state, list_name, [])
-      |> get_items_in_range(start, stop)
-
-    {:reply, res, state}
-  end
-
-  def handle_call({:llen, list_name}, _from, state) do
-    sz = Map.get(state, list_name, []) |> Enum.count()
-    {:reply, sz, state}
-  end
-
-  def handle_call({:lpushx, list_name, new_items}, _from, state) do
-    new_list =
-      Map.get(state, list_name, [])
-      |> concat_items_x(new_items, :left)
-
-    sz = new_list |> Enum.count()
-    {:reply, sz, update_state(new_list, list_name, state)}
-  end
-
-  def handle_call({:lpush, list_name, new_items}, _from, state) do
-    new_list =
-      Map.get(state, list_name, [])
-      |> concat_items(new_items, :left)
-
-    sz = new_list |> Enum.count()
-    {:reply, sz, update_state(new_list, list_name, state)}
-  end
-
-  def handle_call({:rpushx, list_name, new_items}, _from, state) do
-    new_list =
-      Map.get(state, list_name, [])
-      |> concat_items_x(new_items, :right)
-
-    sz = new_list |> Enum.count()
-    {:reply, sz, Map.put(state, list_name, new_list)}
-  end
-
-  def handle_call({:rpush, list_name, new_items}, _from, state) do
-    new_list =
-      Map.get(state, list_name, [])
-      |> concat_items(new_items, :right)
-
-    sz = new_list |> Enum.count()
-    {:reply, sz, Map.put(state, list_name, new_list)}
-  end
-
-  def handle_call({:lpop, list_name}, _from, state) do
-    {val, new_list} = pop_items_from_list(:left, list_name, state)
-    new_state = update_state(new_list, list_name, state)
-    {:reply, val, new_state}
-  end
-
-  def handle_call({:rpop, list_name}, _from, state) do
-    {val, new_list} = pop_items_from_list(:right, list_name, state)
-    new_state = update_state(new_list, list_name, state)
-    {:reply, val, new_state}
-  end
-
-  defp concat_items_x([], _items, _direction) do
-    []
-  end
-
-  defp concat_items_x(list, items, direction) do
-    concat_items(list, items, direction)
-  end
-
-  defp concat_items(lst, items, :left = _direction) do
-    items ++ lst
-  end
-
-  defp concat_items(lst, items, :right = _direction) do
-    lst ++ items
-  end
-
-  defp pop_items_from_list(:left, list_name, state) do
-    list = Map.get(state, list_name, [])
-    {List.first(list), Enum.drop(list, 1)}
-  end
-
-  defp pop_items_from_list(:right, list_name, state) do
-    list = Map.get(state, list_name, [])
-    {List.last(list), Enum.drop(list, -1)}
-  end
-
-  defp get_items_in_range([], _start, _stop) do
-    []
-  end
-
-  defp get_items_in_range(list, start, stop) when start < 0 do
-    get_items_in_range(list, 0, stop)
-  end
-
-  defp get_items_in_range(list, start, stop) when stop < 0 do
-    sz = Enum.count(list)
-    last = sz + stop
-    get_items_in_range(list, start, last)
-  end
-
-  defp get_items_in_range(list, start, stop) do
-    list |> Enum.slice(start, stop + 1)
-  end
-
-  defp update_state([] = _list, list_name, state) do
-    Map.delete(state, list_name)
-  end
-
-  defp update_state(list, list_name, state) do
-    Map.put(state, list_name, list)
-  end
-
-  defp update_at(list, idx, val) do
-    case idx < Enum.count(list) do
-      false ->
-        {:error, list}
+    case src_list do
+      [] ->
+        {:reply, nil, table}
 
       _ ->
-        ll = list |> List.update_at(idx, fn _x -> val end)
-        {:ok, ll}
+        {popped, new_src} = List.pop_at(src_list, -1)
+        new_dest = [popped | dest_list]
+
+        true = :ets.insert(table, {src, new_src})
+        true = :ets.insert(table, {dest, new_dest})
+
+        {:reply, popped, table}
     end
   end
 
-  defp rpoplpush_helper(src = [], dest) do
-    {nil, src, dest}
+  def handle_call({:ltrim, list_name, start, stop}, from, table)
+  when is_integer(start) and is_integer(stop) do
+    current_list =
+      case :ets.lookup(table, list_name) do
+        [] -> []
+        [{_, list}] -> list
+      end
+
+    trimmed =
+      get_items_in_range(current_list, start, stop)
+
+    :ets.insert(table, {list_name, trimmed})
+    GenServer.reply(from, :ok)
+
+    {:noreply, table}
   end
 
-  defp rpoplpush_helper(src, dest) do
-    item = List.last(src)
-    {item, Enum.drop(src, -1), [item | dest]}
+  def handle_call({:rename, old_name, new_name}, _from, table) do
+    case :ets.lookup(table, old_name) do
+      [] ->
+        # Old list does not exist
+        {:reply, false, table}
+
+      [{^old_name, list}] ->
+        # Insert under the new name and delete the old one
+        true = :ets.insert(table, {new_name, list})
+        true = :ets.delete(table, old_name)
+        {:reply, true, table}
+    end
+  end
+
+  def handle_call({:rpop, list_name}, _from, table) do
+    case :ets.lookup(table, list_name) do
+      [] ->
+        # List doesn't exist, return nil
+        {:reply, nil, table}
+
+      [{^list_name, list}] ->
+        case Enum.reverse(list) do
+          [] ->
+            # List is empty
+            {:reply, nil, table}
+
+          [last | rest_reversed] ->
+            new_list = Enum.reverse(rest_reversed)
+            :ets.insert(table, {list_name, new_list})
+            {:reply, last, table}
+        end
+    end
+  end
+
+  def handle_call({:lindex, list_name, idx}, _from, table) when is_integer(idx) do
+    case :ets.lookup(table, list_name) do
+      [] ->
+        {:reply, nil, table}
+
+      [{^list_name, list}] ->
+        adjusted_idx =
+        if idx < 0 do
+          length(list) + idx
+        else
+          idx
+        end
+
+        value = Enum.at(list, adjusted_idx)
+        {:reply, value, table}
+    end
+  end
+
+  def handle_call({:lpop, list_name}, _from, table) do
+    case :ets.lookup(table, list_name) do
+      [] ->
+        {:reply, nil, table}
+
+      [{^list_name, [head | tail]}] ->
+        :ets.insert(table, {list_name, tail})
+        {:reply, head, table}
+
+      [{^list_name, []}] ->
+        {:reply, nil, table}
+    end
+  end
+
+  def handle_call({:rpushx, list_name, items}, _from, table) do
+    case :ets.lookup(table, list_name) do
+      [] ->
+        {:reply, 0, table}
+
+      [{^list_name, list}] ->
+        new_list = list ++ items
+        true = :ets.insert(table, {list_name, new_list})
+        {:reply, length(new_list), table}
+    end
+  end
+
+  def handle_call({:lset, list_name, idx, val}, _from, table) when is_integer(idx) do
+    case :ets.lookup(table, list_name) do
+      [] ->
+        {:reply, {:error, "ERR index out of range"}, table}
+
+      [{^list_name, list}] ->
+        list_len = length(list)
+
+        # Handle negative indices
+        index = if idx < 0, do: list_len + idx, else: idx
+
+        if index < 0 or index >= list_len do
+          {:reply, {:error, "ERR index out of range"}, table}
+        else
+          updated_list = List.replace_at(list, index, val)
+          true = :ets.insert(table, {list_name, updated_list})
+          {:reply, :ok, table}
+        end
+    end
+  end
+
+  # Implement other operations similarly, using ETS functions for state management
+
+  # Helper function adjustments for ETS...
+  defp get_items_in_range(list, start, stop) do
+    len = length(list)
+
+    norm_start = 
+      cond do
+      start < 0 -> max(len + start, 0)
+      true -> min(start, len)
+    end
+
+    norm_stop = 
+      cond do
+      stop < 0 -> max(len + stop, 0)
+      true -> min(stop, len - 1)
+    end
+
+    if norm_start > norm_stop do
+      []
+    else
+      Enum.slice(list, norm_start, norm_stop - norm_start + 1)
+    end
   end
 end

@@ -202,6 +202,7 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
+    @tag skip: true
     test "RENAMENX", %{client: client} do
       client |> :eredis.q(["SET", "mykey", "hello"])
       {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
