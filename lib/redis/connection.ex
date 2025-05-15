@@ -98,17 +98,15 @@ defmodule Remixdb.RedisConnection do
       {:rename, [old_name, new_name]} ->
         res =
           datastructures()
-          |> Enum.any?(fn mod ->
-            :erlang.apply(mod, :rename, [old_name, new_name])
-          end)
+          |> Enum.any?(fn mod -> :erlang.apply(mod, :rename, [old_name, new_name]) end)
 
         case res do
           false -> {:error, "ERR no such key"}
           _ -> "OK"
         end
 
-      {:renamenx, [_old_name, _new_name]} ->
-        raise "not implemented!"
+      {:renamenx, [old_name, new_name]} ->
+        RSS.renamenx(old_name, new_name)
 
       {:rpushx, [name | items]} ->
         RL.rpushx(name, items)

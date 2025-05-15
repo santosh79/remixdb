@@ -93,15 +93,19 @@ defmodule Remixdb.String do
     GenServer.call(@name, :dbsize)
   end
 
+  def exists?(key) do
+    GenServer.call(@name, {:exists, key})
+  end
+
   @doc """
   Sets a string value for a key.
 
   ## Parameters
-    - `key` (any): The key to set.
-    - `val` (any): The value to store.
+  - `key` (any): The key to set.
+  - `val` (any): The value to store.
 
   ## Returns
-    - `:ok` on success.
+  - `:ok` on success.
 
   ## Example
 
@@ -147,6 +151,10 @@ defmodule Remixdb.String do
   """
   def get(key) do
     GenServer.call(@name, {:get, key})
+  end
+
+  def renamenx(old_name, new_name) do
+    GenServer.call(@name, {:renamenx, old_name, new_name})
   end
 
   @doc """
@@ -311,26 +319,52 @@ defmodule Remixdb.String do
     {:reply, :ok, table}
   end
 
+  def handle_call({:renamenx, old_name, new_name}, _from, table) do
+    case get_val(table, old_name) do
+      nil ->
+        response = {:error, "ERR no such key"}
+        {:reply, response, table}
+      _ ->
+        case get_val(table, new_name) do
+          nil ->
+            private_rename(old_name, new_name, table)
+            {:reply, "1", table}
+          _ -> 
+            {:reply, "0", table}
+        end
+    end
+  end
+
   def handle_call({:rename, old_name, new_name}, _from, table) do
+    result = private_rename(old_name, new_name, table)
+    {:reply, result, table}
+  end
+
+  def handle_call({:exists, key}, _from, table) do
+    case get_val(table, key) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  defp private_rename(old_name, new_name, table) do
     old_value =
       case :ets.lookup(table, old_name) do
         [{^old_name, value}] -> value
         [] -> nil
       end
 
-    result =
-      case old_value do
-        nil ->
-          false
+    case old_value do
+      nil ->
+        false
 
-        _ ->
-          :ets.insert(table, {new_name, old_value})
-          :ets.delete(table, old_name)
-          true
-      end
-
-    {:reply, result, table}
+      _ ->
+        true = :ets.insert(table, {new_name, old_value})
+        true = :ets.delete(table, old_name)
+        true
+    end
   end
+  
 
   defp get_val(table, key) do
     case :ets.lookup(table, key) do
