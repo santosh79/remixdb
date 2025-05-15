@@ -139,20 +139,49 @@ defmodule Remixdb.String do
   Gets the value of a key.
 
   ## Parameters
-    - `key` (any): The key to retrieve.
+  - `key` (any): The key to retrieve.
 
   ## Returns
-    - The value of the key, or `nil` if the key does not exist.
+  - The value of the key, or `nil` if the key does not exist.
 
   ## Example
 
-      Remixdb.String.get("foo")
-      "baz"
+  Remixdb.String.get("foo")
+  "baz"
   """
   def get(key) do
     GenServer.call(@name, {:get, key})
   end
 
+  @doc """
+  Renames a key to a new name **only if the new name does not already exist**.
+
+  This behaves like `rename/2`, but does nothing if the `new_name` key already exists.
+  It returns `"1"` if the rename was successful, and `"0"` if the destination key already exists.
+  If the source key does not exist, it returns an error tuple.
+
+  ## Parameters
+
+    - `old_name` (any): The current key name.
+    - `new_name` (any): The new key name.
+
+  ## Returns
+
+    - `"1"` if the rename was successful.
+    - `"0"` if the destination key already exists.
+    - `{:error, "ERR no such key"}` if the source key does not exist.
+
+  ## Examples
+
+    iex> Remixdb.String.renamenx("foo", "bar")
+    "1"
+
+    iex> Remixdb.String.renamenx("foo", "baz") # when "baz" already exists
+    "0"
+
+    iex> Remixdb.String.renamenx("unknown", "anything")
+    {:error, "ERR no such key"}
+  """
   def renamenx(old_name, new_name) do
     GenServer.call(@name, {:renamenx, old_name, new_name})
   end
