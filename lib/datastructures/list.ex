@@ -1,3 +1,5 @@
+alias Remixdb.ETSHelpers, as: ETSHelpers
+
 defmodule Remixdb.List do
   use GenServer
 
@@ -297,6 +299,18 @@ defmodule Remixdb.List do
     GenServer.call(@name, {:rename, old_name, new_name})
   end
 
+  def del(list_names) do
+    GenServer.call(@name, {:del, list_names})
+  end
+
+  def exists?(key) do
+    GenServer.call(@name, {:exists, key})
+  end
+
+  def renamenx(old_name, new_name) do
+    GenServer.call(@name, {:renamenx, old_name, new_name})
+  end
+
 
   # Example implementation adjustments for ETS
 
@@ -312,12 +326,10 @@ defmodule Remixdb.List do
   end
 
   def handle_call({:llen, list_name}, _from, table) do
-    size =
-      :ets.lookup(table, list_name)
-      |> case do
-           [] -> 0
-           [{_, list}] -> length(list)
-         end
+    size = case :ets.lookup(table, list_name) do
+             [] -> 0
+             [{_, list}] -> length(list)
+           end
 
     {:reply, size, table}
   end
@@ -405,20 +417,6 @@ defmodule Remixdb.List do
     {:noreply, table}
   end
 
-  def handle_call({:rename, old_name, new_name}, _from, table) do
-    case :ets.lookup(table, old_name) do
-      [] ->
-        # Old list does not exist
-        {:reply, false, table}
-
-      [{^old_name, list}] ->
-        # Insert under the new name and delete the old one
-        true = :ets.insert(table, {new_name, list})
-        true = :ets.delete(table, old_name)
-        {:reply, true, table}
-    end
-  end
-
   def handle_call({:rpop, list_name}, _from, table) do
     case :ets.lookup(table, list_name) do
       [] ->
@@ -504,6 +502,25 @@ defmodule Remixdb.List do
     end
   end
 
+  def handle_call({:renamenx, old_name, new_name}, _from, table) do
+    {:reply, ETSHelpers.renamenx(table, old_name, new_name), table}
+  end
+
+  def handle_call({:rename, old_name, new_name}, _from, table) do
+    {:reply, ETSHelpers.rename(table, old_name, new_name), table}
+  end
+
+  def handle_call({:exists, key}, _from, table) do
+    {:reply, ETSHelpers.exists?(table, key), table}
+  end
+
+  # del
+  def handle_call({:del, keys}, _from, table) do
+    :ok = ETSHelpers.del_keys(table, keys)
+    {:reply, "OK", table}
+  end
+
+
   # Implement other operations similarly, using ETS functions for state management
 
   # Helper function adjustments for ETS...
@@ -528,4 +545,5 @@ defmodule Remixdb.List do
       Enum.slice(list, norm_start, norm_stop - norm_start + 1)
     end
   end
+
 end

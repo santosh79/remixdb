@@ -1,4 +1,5 @@
 alias Remixdb.Counter, as: Counter
+alias Remixdb.ETSHelpers, as: ETSHelpers
 
 defmodule Remixdb.String do
   @moduledoc """
@@ -301,6 +302,11 @@ defmodule Remixdb.String do
     GenServer.call(@name, {:incrby, key, val * -1})
   end
 
+  def del(list_names) do
+    GenServer.call(@name, {:del, list_names})
+  end
+
+
   def handle_call(:flushall, _from, table) do
     :ets.delete(table)
     new_table = :ets.new(@name, [:named_table, :set, :public])
@@ -313,7 +319,7 @@ defmodule Remixdb.String do
   end
 
   def handle_call({:append, key, val}, _from, table) do
-    old_val = get_val(table, key)
+    old_val = ETSHelpers.get_val(table, key)
 
     new_val =
       case old_val do
@@ -327,82 +333,46 @@ defmodule Remixdb.String do
   end
 
   def handle_call({:incrby, key, incrby}, _from, table) do
-    new_val = Counter.incrby(get_val(table, key), incrby)
+    new_val = Counter.incrby(ETSHelpers.get_val(table, key), incrby)
     set_val(table, key, new_val)
     {:reply, new_val, table}
   end
 
   def handle_call({:get, key}, _from, table) do
-    val = get_val(table, key)
+    val = ETSHelpers.get_val(table, key)
     {:reply, val, table}
   end
 
   def handle_call({:getset, key, val}, _from, table) do
-    old_val = get_val(table, key)
+    old_val = ETSHelpers.get_val(table, key)
     set_val(table, key, val)
     {:reply, old_val, table}
   end
 
   def handle_call({:set, key, val}, _from, table) do
-    set_val(table, key, val)
+    :ok = set_val(table, key, val)
     {:reply, :ok, table}
   end
 
   def handle_call({:renamenx, old_name, new_name}, _from, table) do
-    case get_val(table, old_name) do
-      nil ->
-        response = {:error, "ERR no such key"}
-        {:reply, response, table}
-      _ ->
-        case get_val(table, new_name) do
-          nil ->
-            private_rename(old_name, new_name, table)
-            {:reply, "1", table}
-          _ -> 
-            {:reply, "0", table}
-        end
-    end
+    {:reply, ETSHelpers.renamenx(table, old_name, new_name), table}
   end
 
   def handle_call({:rename, old_name, new_name}, _from, table) do
-    result = private_rename(old_name, new_name, table)
-    {:reply, result, table}
+    {:reply, ETSHelpers.rename(table, old_name, new_name), table}
   end
 
   def handle_call({:exists, key}, _from, table) do
-    case get_val(table, key) do
-      nil -> false
-      _ -> true
-    end
+    {:reply, ETSHelpers.exists?(table, key), table}
   end
 
-  defp private_rename(old_name, new_name, table) do
-    old_value =
-      case :ets.lookup(table, old_name) do
-        [{^old_name, value}] -> value
-        [] -> nil
-      end
-
-    case old_value do
-      nil ->
-        false
-
-      _ ->
-        true = :ets.insert(table, {new_name, old_value})
-        true = :ets.delete(table, old_name)
-        true
-    end
-  end
-  
-
-  defp get_val(table, key) do
-    case :ets.lookup(table, key) do
-      [{^key, value}] -> value
-      [] -> nil
-    end
+  def handle_call({:del, keys}, _from, table) do
+    :ok = ETSHelpers.del_keys(table, keys)
+    {:reply, "OK", table}
   end
 
   defp set_val(table, key, val) do
-    :ets.insert(table, {key, val})
+    :ok = ETSHelpers.put_val(table, key, val)
+    :ok
   end
 end

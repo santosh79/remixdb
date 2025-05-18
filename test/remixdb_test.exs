@@ -202,17 +202,69 @@ defmodule RemixdbTest do
       assert val === "ERR no such key"
     end
 
-    test "RENAMENX", %{client: client} do
-      client |> :eredis.q(["SET", "mykey", "hello"])
-      {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
-      assert val === "1"
+    test "RENAMENX works correctly for strings and lists", %{client: client} do
+      ## STRING KEY CASES
 
-      client |> :eredis.q(["SET", "mykey", "hello"])
-      {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
-      assert val === "0"
+      # Basic rename works
+      client |> :eredis.q(["SET", "strkey", "hello"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "strkey", "strkey2"])
+      assert val == "1"
 
-      {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
+      # Target exists, so renamenx should fail
+      client |> :eredis.q(["SET", "strkey", "again"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "strkey2", "strkey"])
+      assert val == "0"
+
+      # Rename fails if source does not exist
+      {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "nonexistent", "newname"])
+
+      # Contents were moved correctly
+      {:ok, val} = client |> :eredis.q(["GET", "strkey2"])
+      assert val == "hello"
+
+      {:ok, val} = client |> :eredis.q(["GET", "strkey"])
+      assert val == "again"
+
+      ## LIST KEY CASES
+
+      # Setup list
+      client |> :eredis.q(["DEL", "listA", "listB"])
+      {:ok, "3"} = client |> :eredis.q(["RPUSH", "listA", "a", "b", "c"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "listA", "listB"])
+      assert val == "1"
+
+      # # Verify data moved
+      {:ok, val} = client |> :eredis.q(["LRANGE", "listB", "0", "-1"])
+      assert val == ["a", "b", "c"]
+
+      {:ok, val} = client |> :eredis.q(["EXISTS", "listA"])
+      assert val == "0"
+
+      # # Try renaming again to listB, which already exists — should fail
+      client |> :eredis.q(["RPUSH", "listA", "x", "y", "z"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "listA", "listB"])
+      assert val == "0"
+
+      # # Contents of listB should remain unchanged
+      {:ok, val} = client |> :eredis.q(["LRANGE", "listB", "0", "-1"])
+      assert val == ["a", "b", "c"]
+
+      # # Contents of listA should still exist
+      {:ok, val} = client |> :eredis.q(["LRANGE", "listA", "0", "-1"])
+      assert val == ["x", "y", "z"]
     end
+
+    # test "RENAMENX", %{client: client} do
+    #   client |> :eredis.q(["SET", "mykey", "hello"])
+    #   {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
+    #   assert val === "1"
+
+    #   client |> :eredis.q(["SET", "mykey", "hello"])
+    #   {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
+    #   assert val === "0"
+
+    #   {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
+    # end
 
     ##
     # LISTS
