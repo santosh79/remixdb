@@ -64,10 +64,6 @@ defmodule Remixdb.Hash do
     {:ok, table}
   end
 
-  # def init(:ok) do
-  #   {:ok, Map.new}
-  # end
-
   @doc """
   Flushes all hashes and their fields from the store.
 
