@@ -254,17 +254,17 @@ defmodule RemixdbTest do
       assert val == ["x", "y", "z"]
     end
 
-    # test "RENAMENX", %{client: client} do
-    #   client |> :eredis.q(["SET", "mykey", "hello"])
-    #   {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
-    #   assert val === "1"
+    test "RENAMENX", %{client: client} do
+      client |> :eredis.q(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "mykey", "foo"])
+      assert val === "1"
 
-    #   client |> :eredis.q(["SET", "mykey", "hello"])
-    #   {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
-    #   assert val === "0"
+      client |> :eredis.q(["SET", "mykey", "hello"])
+      {:ok, val} = client |> :eredis.q(["RENAMENX", "foo", "mykey"])
+      assert val === "0"
 
-    #   {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
-    # end
+      {:error, "ERR no such key"} = client |> :eredis.q(["RENAMENX", "unknown_key", "something"])
+    end
 
     ##
     # LISTS
