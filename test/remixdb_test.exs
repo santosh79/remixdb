@@ -920,5 +920,19 @@ defmodule RemixdbTest do
       assert new_db_sz === 0
       # assert val === (prev_db_size + 2)
     end
+
+    test "bulk strings can contain CRLF (RESP correctness)", %{client: client} do
+      key = :erlang.make_ref() |> inspect()
+
+      # This is the critical payload: a bulk string with an embedded RESP line terminator.
+      vv = "hello\r\nworld"
+
+      # SET should succeed and GET should return the exact same bytes.
+      {:ok, set_resp} = client |> :eredis.q(["SET", key, vv])
+      assert set_resp === "OK"
+
+      {:ok, got} = client |> :eredis.q(["GET", key])
+      assert got === vv
+    end
   end
 end
