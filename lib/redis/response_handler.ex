@@ -15,7 +15,7 @@ defmodule Remixdb.Redis.ResponseHandler do
   end
 
   def send_response(socket, val) when is_bitstring(val) do
-    val_bytes = val |> String.length |> Integer.to_string
+    val_bytes = val |> byte_size |> Integer.to_string
     msg = "$" <> val_bytes <> "\r\n" <> val <> "\r\n"
     :gen_tcp.send socket, msg
     socket

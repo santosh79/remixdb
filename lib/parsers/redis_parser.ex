@@ -37,13 +37,13 @@ defmodule Remixdb.Parsers.RedisParser do
 
   defp read_args(socket, num, accum) do
     {:ok, num_bytes} = read_bytes(socket)
-    {:ok, data} = read_line(socket)
 
-    # Ensure the number of bytes matches
-    # Subtract 2 for the trailing /r/n
-    ^num_bytes = :erlang.byte_size(data) - 2
-
-    msg = data |> :binary.part(0, :erlang.byte_size(data) - 2)
+    # Switch to raw mode and read exactly num_bytes
+    :inet.setopts(socket, [packet: :raw])
+    {:ok, data} = :gen_tcp.recv(socket, num_bytes + 2)
+    <<msg::binary-size(num_bytes), "\r\n"::binary>> = data
+    # Switch back to line mode for next command
+    :inet.setopts(socket, [packet: :line])
 
     read_args(socket, num - 1, [msg | accum])
   end
