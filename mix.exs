@@ -17,7 +17,7 @@ defmodule Remixdb.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :tools, :runtime_tools],
       env: [port: 6379],
       mod: {Remixdb, []}
     ]

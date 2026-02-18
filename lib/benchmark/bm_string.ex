@@ -23,6 +23,31 @@ defmodule Remixdb.BM.String do
     run_bm(2, 20)
   end
 
+  def profile_bm(num_elms \\ 1_000) do
+    # Start your server
+    {:ok, _} = Remixdb.start(:normal, [])
+    
+    # Start eredis client
+    {:ok, client} = :eredis.start_link(~c"0.0.0.0", 6379)
+    
+    # Warm up
+    kvs = create_key_vals(100)
+    Enum.each(kvs, fn {k, v} -> :eredis.q(client, ["SET", k, v]) end)
+    
+    # Profile the actual work
+    :fprof.trace([:start, procs: :all])
+    
+    kvs = create_key_vals(num_elms)
+    Enum.each(kvs, fn {k, v} -> :eredis.q(client, ["SET", k, v]) end)
+    Enum.each(kvs, fn {k, _v} -> :eredis.q(client, ["GET", k]) end)
+    
+    :fprof.trace(:stop)
+    :fprof.profile()
+    :fprof.analyse(dest: ~c"profile_results.txt")
+    
+    :eredis.stop(client)
+  end
+
   def run_bm(num_connections \\ 10, num_times \\ 50, num_elms \\ 1_000) do
     1..num_connections
     |> Enum.map(fn _ ->

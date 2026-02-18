@@ -6,64 +6,80 @@ defmodule Remixdb.Parsers.RedisParser do
   end
 
   def init({:ok, socket}) do
-    {:ok, socket}
+    {:ok, {socket, <<>>}}  # state is now {socket, buffer}
   end
 
   def read_command(pid) do
     GenServer.call(pid, :read_command, :infinity)
   end
 
-  def handle_call(:read_command, _from, socket = state) do
-    {:ok, [cmd | args]} = read_new_command(socket)
-    res = parse_command(cmd, args)
-    response = {:ok, res}
-    {:reply, response, state}
+  def handle_call(:read_command, _from, {socket, buffer} = state) do
+    case read_new_command(socket, buffer) do
+      {:ok, [cmd | args], rest_buffer} ->
+        res = parse_command(cmd, args)
+        {:reply, {:ok, res}, {socket, rest_buffer}}
+      {:error, reason} ->
+        {:stop, :normal, {:error, reason}, state}
+    end
   end
 
-  def handle_info(_, state), do: {:noreply, state}
-
-  defp read_new_command(socket) do
-    {:ok, num_args} = read_number_args(socket)
-    read_args(socket, num_args)
+  defp read_new_command(socket, buffer) do
+    {:ok, num_args, buffer} = read_number_args(socket, buffer)
+    read_args(socket, num_args, [], buffer)
   end
 
-  defp read_args(socket, num) do
-    read_args(socket, num, [])
+  defp read_line(socket, buffer) do
+    case :binary.match(buffer, "\r\n") do
+      {pos, 2} ->
+        line = :binary.part(buffer, 0, pos + 2)
+        rest = :binary.part(buffer, pos + 2, byte_size(buffer) - pos - 2)
+        {:ok, line, rest}
+      :nomatch ->
+        case :gen_tcp.recv(socket, 0) do
+          {:ok, chunk} -> read_line(socket, buffer <> chunk)
+          {:error, reason} -> {:error, reason}
+        end
+    end
   end
 
-  defp read_args(_socket, 0, accum) do
-    {:ok, :lists.reverse(accum)}
+  defp read_number_args(socket, buffer) do
+    case read_line(socket, buffer) do
+      {:ok, data, rest} -> {:ok, line_to_int(data), rest}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp read_args(socket, num, accum) do
-    {:ok, num_bytes} = read_bytes(socket)
-
-    # Switch to raw mode and read exactly num_bytes
-    :inet.setopts(socket, [packet: :raw])
-    {:ok, data} = :gen_tcp.recv(socket, num_bytes + 2)
-    <<msg::binary-size(num_bytes), "\r\n"::binary>> = data
-    # Switch back to line mode for next command
-    :inet.setopts(socket, [packet: :line])
-
-    read_args(socket, num - 1, [msg | accum])
+  defp read_bytes(socket, buffer) do
+    case read_line(socket, buffer) do
+      {:ok, data, rest} -> {:ok, line_to_int(data), rest}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp read_bytes(socket) do
-    {:ok, data} = read_line(socket)
-    {:ok, line_to_int(data)}
+  defp read_args(_socket, 0, accum, buffer) do
+    {:ok, :lists.reverse(accum), buffer}
   end
 
-  defp read_line(socket) do
-    :gen_tcp.recv(socket, 0)
+  defp read_args(socket, num, accum, buffer) do
+    {:ok, num_bytes, buffer} = read_bytes(socket, buffer)
+  # Read exact bytes for bulk string
+    {:ok, data, buffer} = read_exact(socket, num_bytes, buffer)
+  # Consume trailing CRLF
+    {:ok, "\r\n", buffer} = read_exact(socket, 2, buffer)
+    read_args(socket, num - 1, [data | accum], buffer)
   end
 
-  @doc """
-  This reads a line of format "*3\r\n". And returns 3. Here 3 is any number.
-  """
-  def read_number_args(socket) do
-    {:ok, data} = read_line(socket)
-    num_args = data |> line_to_int
-    {:ok, num_args}
+  defp read_exact(_socket, n, buffer) when byte_size(buffer) >= n do
+    data = :binary.part(buffer, 0, n)
+    rest = :binary.part(buffer, n, byte_size(buffer) - n)
+    {:ok, data, rest}
+  end
+
+  defp read_exact(socket, n, buffer) do
+    case :gen_tcp.recv(socket, 0) do
+      {:ok, chunk} -> read_exact(socket, n, buffer <> chunk)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp line_to_int(data) do
