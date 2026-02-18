@@ -69,17 +69,19 @@ defmodule Remixdb.Parsers.RedisParser do
     read_args(socket, num - 1, [data | accum], buffer)
   end
 
-  defp read_exact(_socket, n, buffer) when byte_size(buffer) >= n do
+  defp read_exact(_socket, n, buffer) when byte_size(buffer) == n do
+    {:ok, buffer, <<>>}
+  end
+
+  defp read_exact(_socket, n, buffer) when byte_size(buffer) > n do
     data = :binary.part(buffer, 0, n)
     rest = :binary.part(buffer, n, byte_size(buffer) - n)
     {:ok, data, rest}
   end
 
   defp read_exact(socket, n, buffer) do
-    case :gen_tcp.recv(socket, 0) do
-      {:ok, chunk} -> read_exact(socket, n, buffer <> chunk)
-      {:error, reason} -> {:error, reason}
-    end
+    {:ok, chunk} = :gen_tcp.recv(socket, 0)
+    read_exact(socket, n, buffer <> chunk)
   end
 
   defp line_to_int(data) do
