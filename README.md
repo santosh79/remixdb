@@ -12,6 +12,7 @@ It's Fast! Pretty close to **matching redis** in terms of performance.
 Here are some results of running `redis-benchmark` on an early 2023 M1 iMac:
 
 ```
+redis-benchmark -h 0.0.0.0 -t get -n 100000 -r 100000000
  
 GET: rps=0.0 (overall: nan) avg_msec=nan (overall: nan)
                                                         
