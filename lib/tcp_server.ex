@@ -32,7 +32,9 @@ defmodule Remixdb.TcpServer do
     case :gen_tcp.accept(socket, 1_000) do
       {:error, :timeout} -> nil
       {:ok, client_sock} ->
-        Remixdb.RedisConnection.start_link(client_sock)
+        {:ok, pid} = Remixdb.RedisConnection.start_link(client_sock)
+        :ok = :gen_tcp.controlling_process(client_sock, pid)
+        GenServer.cast(pid, :start)
     end
     send self(), :accept
     {:noreply, state}
