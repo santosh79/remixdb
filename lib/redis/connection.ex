@@ -18,12 +18,6 @@ defmodule Remixdb.RedisConnection do
     {:ok, socket}
   end
 
-  def handle_info(:start, socket) do
-    {:ok, parser} = Remixdb.Parsers.RedisParser.start_link(socket)
-    send(self(), :read_socket)
-    {:noreply, %State{socket: socket, parser: parser}}
-  end
-
   def handle_info(:read_socket, %State{socket: socket, parser: parser} = state) do
     {:ok, msg} = Remixdb.Parser.read_command(parser)
     re = get_response(msg)
@@ -34,9 +28,16 @@ defmodule Remixdb.RedisConnection do
 
   def handle_info(_, state), do: {:noreply, state}
 
+  def handle_cast(:start, socket) do
+    {:ok, parser} = Remixdb.Parsers.RedisParser.start_link(socket)
+    send(self(), :read_socket)
+    {:noreply, %State{socket: socket, parser: parser}}
+  end
+
   defp get_response(msg) do
     case msg do
       {:config, _} ->
+        # SantoshTODO: Fix This Hard Code
         ["SAVE", "3600 1 300 100 60 10000"]
 
       {:ping, []} ->
@@ -76,7 +77,8 @@ defmodule Remixdb.RedisConnection do
       {:set, [key, val]} ->
         RSS.set(key, val)
 
-      {:del, keys} -> RL.del(keys)
+      {:del, keys} ->
+        RL.del(keys)
 
       {:incr, [key]} ->
         RSS.incr(key)
@@ -110,6 +112,7 @@ defmodule Remixdb.RedisConnection do
         case RSS.exists?(old_name) do
           true ->
             RSS.renamenx(old_name, new_name)
+
           false ->
             RL.renamenx(old_name, new_name)
         end
@@ -141,103 +144,103 @@ defmodule Remixdb.RedisConnection do
         # TODO: Clean this up
         RL.lrange(name, start, stop)
 
-        {:ltrim, [name, st, en]} ->
-          {start, ""} = Integer.parse(st)
-          {stop, ""} = Integer.parse(en)
-          # TODO: Clean this up
-          RL.ltrim(name, start, stop)
+      {:ltrim, [name, st, en]} ->
+        {start, ""} = Integer.parse(st)
+        {stop, ""} = Integer.parse(en)
+        # TODO: Clean this up
+        RL.ltrim(name, start, stop)
 
-        {:lset, [name, dd, val]} ->
-          {idx, ""} = Integer.parse(dd)
-          RL.lset(name, idx, val)
+      {:lset, [name, dd, val]} ->
+        {idx, ""} = Integer.parse(dd)
+        RL.lset(name, idx, val)
 
-        {:lindex, [name, idx]} ->
-          RL.lindex(name, idx)
+      {:lindex, [name, idx]} ->
+        RL.lindex(name, idx)
 
-          {:rpoplpush, [src, dest]} ->
-          RL.rpoplpush(src, dest)
+      {:rpoplpush, [src, dest]} ->
+        RL.rpoplpush(src, dest)
 
-          {:sadd, [name | items]} ->
-          RST.sadd(name, items)
+      {:sadd, [name | items]} ->
+        RST.sadd(name, items)
 
-          {:srem, [name | items]} ->
-          RST.srem(name, items)
+      {:srem, [name | items]} ->
+        RST.srem(name, items)
 
-          {:smembers, [name]} ->
-          RST.smembers(name)
+      {:smembers, [name]} ->
+        RST.smembers(name)
 
-          {:sismember, [name, keys]} ->
-          RST.sismember(name, keys)
+      {:sismember, [name, keys]} ->
+        RST.sismember(name, keys)
 
-          {:smismember, name_and_keys} ->
-          [name | keys] = name_and_keys
-          RST.smismember(name, keys)
+      {:smismember, name_and_keys} ->
+        [name | keys] = name_and_keys
+        RST.smismember(name, keys)
 
-        {:scard, [name]} ->
-          RST.scard(name)
+      {:scard, [name]} ->
+        RST.scard(name)
 
-          {:smove, [src, dest, member]} ->
-          RST.smove(src, dest, member)
+      {:smove, [src, dest, member]} ->
+        RST.smove(src, dest, member)
 
-          {:srandmember, [set_name]} ->
-          RST.srandmember(set_name)
+      {:srandmember, [set_name]} ->
+        RST.srandmember(set_name)
 
-          {:spop, [set_name]} ->
-          RST.spop(set_name)
+      {:spop, [set_name]} ->
+        RST.spop(set_name)
 
-          {:sunion, keys} ->
-          RST.sunion(keys)
+      {:sunion, keys} ->
+        RST.sunion(keys)
 
-          {:sdiff, keys} ->
-          RST.sdiff(keys)
+      {:sdiff, keys} ->
+        RST.sdiff(keys)
 
-          {:sinter, keys} ->
-          RST.sinter(keys)
+      {:sinter, keys} ->
+        RST.sinter(keys)
 
-          {:sdiffstore, args} ->
-          RST.sdiffstore(args)
+      {:sdiffstore, args} ->
+        RST.sdiffstore(args)
 
-          {:sunionstore, args} ->
-          RST.sunionstore(args)
+      {:sunionstore, args} ->
+        RST.sunionstore(args)
 
-          {:sinterstore, args} ->
-          RST.sinterstore(args)
+      {:sinterstore, args} ->
+        RST.sinterstore(args)
 
-          {:hincrby, [hash_name, key, amt]} ->
-          RSH.hincrby(hash_name, key, amt)
+      {:hincrby, [hash_name, key, amt]} ->
+        RSH.hincrby(hash_name, key, amt)
 
-          {:hset, [key, field, val]} ->
-          RSH.hset(key, field, val)
+      {:hset, [key, field, val]} ->
+        RSH.hset(key, field, val)
 
-          {:hsetnx, [key, field, val]} ->
-          RSH.hsetnx(key, field, val)
+      {:hsetnx, [key, field, val]} ->
+        RSH.hsetnx(key, field, val)
 
-          {:hlen, [key]} ->
-          RSH.hlen(key)
+      {:hlen, [key]} ->
+        RSH.hlen(key)
 
-          {:hdel, [hash_name | keys]} ->
-          RSH.hdel(hash_name, keys)
+      {:hdel, [hash_name | keys]} ->
+        RSH.hdel(hash_name, keys)
 
-          {:hmget, [hash_name | fields]} ->
-          RSH.hmget(hash_name, fields)
+      {:hmget, [hash_name | fields]} ->
+        RSH.hmget(hash_name, fields)
 
-          {:hmset, [hash_name | fields]} ->
-          RSH.hmset(hash_name, fields)
+      {:hmset, [hash_name | fields]} ->
+        RSH.hmset(hash_name, fields)
 
-          {:hget, [hash_name, key_name]} ->
-          RSH.hget(hash_name, key_name)
+      {:hget, [hash_name, key_name]} ->
+        RSH.hget(hash_name, key_name)
 
-          {:hgetall, [key]} ->
-          RSH.hgetall(key)
+      {:hgetall, [key]} ->
+        RSH.hgetall(key)
 
-          {:hkeys, [key]} ->
-          RSH.hkeys(key)
+      {:hkeys, [key]} ->
+        RSH.hkeys(key)
 
-          {:hvals, [hash_name]} ->
-          RSH.hvals(hash_name)
+      {:hvals, [hash_name]} ->
+        RSH.hvals(hash_name)
 
-          {:hexists, [hash_name, key]} ->
-          RSH.hexists(hash_name, key)
+      {:hexists, [hash_name, key]} ->
+        RSH.hexists(hash_name, key)
 
       {:hstrlen, [hash_name, key]} ->
         RSH.hstrlen(hash_name, key)
