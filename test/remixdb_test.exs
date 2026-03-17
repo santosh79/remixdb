@@ -4,6 +4,7 @@ defmodule RemixdbTest do
 
     @host ~c"0.0.0.0"
     @port 6379
+    @wrong_type "WRONGTYPE Operation against a key holding the wrong kind of value"
 
     setup_all _context do
       {:ok, client} = :eredis.start_link(@host, @port)
@@ -672,42 +673,49 @@ defmodule RemixdbTest do
       assert val === "a"
 
       # SantoshTODO
-      # val = client |> :eredis.q(["EXISTS", key2])
-      # assert val === "0"
+      {:ok, "0"} = client |> :eredis.q(["EXISTS", key2])
     end
 
     test "SINTERSTORE", %{client: client} do
-      key1 = :erlang.make_ref() |> inspect()
-      key2 = :erlang.make_ref() |> inspect()
-      key3 = :erlang.make_ref() |> inspect()
-      key4 = :erlang.make_ref() |> inspect()
+      set_one = :erlang.make_ref() |> inspect()
+      set_two = :erlang.make_ref() |> inspect()
+      set_three = :erlang.make_ref() |> inspect()
+      set_four = :erlang.make_ref() |> inspect()
 
       full_list = ["a", "b", "c", "d"]
       _full_set = full_list |> MapSet.new()
-      client |> :eredis.q(["SADD", key1] ++ full_list)
+      client |> :eredis.q(["SADD", set_one] ++ full_list)
 
-      client |> :eredis.q(["SADD", key2, "c"])
+      client |> :eredis.q(["SADD", set_two, "c"])
 
-      client |> :eredis.q(["SADD", key3, "a", "c", "e"])
+      client |> :eredis.q(["SADD", set_three, "a", "c", "e"])
 
-      {:ok, val} = client |> :eredis.q(["SINTERSTORE", key4, key1, key2, key3])
+      {:ok, val} = client |> :eredis.q(["SINTERSTORE", set_four, set_one, set_two, set_three])
       assert val === "1"
 
-      {:ok, val} = client |> :eredis.q(["SMEMBERS", key4])
+      {:ok, val} = client |> :eredis.q(["SMEMBERS", set_four])
       assert val === ["c"]
+    end
 
-      # SantoshTODO
-      # Overwrites an existing key
-      # client |> :eredis.q(["SET", "mykey", "hello"])
-      # client |> :eredis.q(["SINTERSTORE", "mykey", "key1", "key2", "key3"])
-      # val = client |> :eredis.q(["SMEMBERS", "mykey"])
-      # assert val === ["c"]
+    test "SINTERSTORE - Overwrites stored value", %{client: client} do
+      client |> :eredis.q(["SET", "mykey", "hello"])
+      {:ok, "hello"} = client |> :eredis.q(["GET", "mykey"])
 
-      # Deletes a key when storing an empty set
-      # val = client |> :eredis.q(["SINTERSTORE", "mykey", "unknown_set", "unknown_set"])
-      # assert val === "0"
-      # val = client |> :eredis.q(["EXISTS", "mykey"])
-      # assert val === "0"
+      set_one = :erlang.make_ref() |> inspect()
+      set_two = :erlang.make_ref() |> inspect()
+      set_three = :erlang.make_ref() |> inspect()
+
+      full_list = ["a", "b", "c", "d"]
+      _full_set = full_list |> MapSet.new()
+      client |> :eredis.q(["SADD", set_one] ++ full_list)
+
+      client |> :eredis.q(["SADD", set_two, "c"])
+
+      client |> :eredis.q(["SADD", set_three, "a", "c", "e"])
+
+      {:ok, "1"} = client |> :eredis.q(["SINTERSTORE", "mykey", set_one, set_two, set_three])
+      {:ok, ["c"]} = client |> :eredis.q(["SMEMBERS", "mykey"])
+      {:error, @wrong_type} = client |> :eredis.q(["GET", "mykey"])
     end
 
     test "SUNIONSTORE", %{client: client} do
