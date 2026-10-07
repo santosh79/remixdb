@@ -12,21 +12,14 @@ It's Fast! Pretty close to **matching redis** in terms of performance.
 Here are some results of running `redis-benchmark` on an early 2023 M1 iMac:
 
 ```
-redis-benchmark -h 0.0.0.0 -t get -n 100000 -r 100000000
- 
+redis-benchmark -h 0.0.0.0 -t get -n 100000 -r 100000000 -c 100
 GET: rps=0.0 (overall: nan) avg_msec=nan (overall: nan)
-                                                        
-GET: rps=94308.0 (overall: 94308.0) avg_msec=0.374 (overall: 0.374)
-                                                                    
-GET: rps=92304.0 (overall: 93306.0) avg_msec=0.354 (overall: 0.364)
-                                                                    
-GET: rps=105816.7 (overall: 97487.4) avg_msec=0.342 (overall: 0.356)
-                                                                     
-GET: rps=104260.0 (overall: 99178.8) avg_msec=0.335 (overall: 0.351)
-                                                                     
+GET: rps=103820.0 (overall: 103820.0) avg_msec=0.596 (overall: 0.596)
+GET: rps=117300.0 (overall: 110560.0) avg_msec=0.534 (overall: 0.563)
+GET: rps=110263.0 (overall: 110460.7) avg_msec=0.528 (overall: 0.551)
 ====== GET ======
-  100000 requests completed in 1.01 seconds
-  50 parallel clients
+  100000 requests completed in 0.93 seconds
+  100 parallel clients
   3 bytes payload
   keep alive: 1
   host configuration "save": 3600 1 300 100 60 10000
@@ -34,48 +27,58 @@ GET: rps=104260.0 (overall: 99178.8) avg_msec=0.335 (overall: 0.351)
   multi-thread: no
 
 Latency by percentile distribution:
-0.000% <= 0.063 milliseconds (cumulative count 2)
-50.000% <= 0.327 milliseconds (cumulative count 51284)
-75.000% <= 0.415 milliseconds (cumulative count 75607)
-87.500% <= 0.495 milliseconds (cumulative count 87757)
-93.750% <= 0.583 milliseconds (cumulative count 93939)
-96.875% <= 0.647 milliseconds (cumulative count 97126)
-98.438% <= 0.727 milliseconds (cumulative count 98506)
-99.219% <= 0.855 milliseconds (cumulative count 99253)
-99.609% <= 0.951 milliseconds (cumulative count 99632)
-99.805% <= 1.007 milliseconds (cumulative count 99812)
-99.902% <= 1.039 milliseconds (cumulative count 99908)
-99.951% <= 1.071 milliseconds (cumulative count 99955)
-99.976% <= 1.175 milliseconds (cumulative count 99977)
-99.988% <= 1.223 milliseconds (cumulative count 99988)
-99.994% <= 1.279 milliseconds (cumulative count 99994)
-99.997% <= 1.303 milliseconds (cumulative count 99997)
-99.998% <= 1.319 milliseconds (cumulative count 99999)
-99.999% <= 1.519 milliseconds (cumulative count 100000)
-100.000% <= 1.519 milliseconds (cumulative count 100000)
+0.000% <= 0.111 milliseconds (cumulative count 1)
+50.000% <= 0.503 milliseconds (cumulative count 50210)
+75.000% <= 0.631 milliseconds (cumulative count 75658)
+87.500% <= 0.743 milliseconds (cumulative count 87767)
+93.750% <= 0.855 milliseconds (cumulative count 93920)
+96.875% <= 0.991 milliseconds (cumulative count 96948)
+98.438% <= 1.327 milliseconds (cumulative count 98439)
+99.219% <= 1.791 milliseconds (cumulative count 99251)
+99.609% <= 1.831 milliseconds (cumulative count 99665)
+99.805% <= 1.855 milliseconds (cumulative count 99834)
+99.902% <= 1.871 milliseconds (cumulative count 99913)
+99.951% <= 1.887 milliseconds (cumulative count 99954)
+99.976% <= 1.951 milliseconds (cumulative count 99978)
+99.988% <= 2.111 milliseconds (cumulative count 99988)
+99.994% <= 2.263 milliseconds (cumulative count 99994)
+99.997% <= 2.327 milliseconds (cumulative count 99997)
+99.998% <= 2.343 milliseconds (cumulative count 99999)
+99.999% <= 2.359 milliseconds (cumulative count 100000)
+100.000% <= 2.359 milliseconds (cumulative count 100000)
 
 Cumulative distribution of latencies:
-0.071% <= 0.103 milliseconds (cumulative count 71)
-8.179% <= 0.207 milliseconds (cumulative count 8179)
-42.672% <= 0.303 milliseconds (cumulative count 42672)
-73.870% <= 0.407 milliseconds (cumulative count 73870)
-88.566% <= 0.503 milliseconds (cumulative count 88566)
-95.313% <= 0.607 milliseconds (cumulative count 95313)
-98.220% <= 0.703 milliseconds (cumulative count 98220)
-99.075% <= 0.807 milliseconds (cumulative count 99075)
-99.434% <= 0.903 milliseconds (cumulative count 99434)
-99.812% <= 1.007 milliseconds (cumulative count 99812)
-99.970% <= 1.103 milliseconds (cumulative count 99970)
-99.985% <= 1.207 milliseconds (cumulative count 99985)
-99.997% <= 1.303 milliseconds (cumulative count 99997)
-99.999% <= 1.407 milliseconds (cumulative count 99999)
-100.000% <= 1.607 milliseconds (cumulative count 100000)
+0.000% <= 0.103 milliseconds (cumulative count 0)
+0.038% <= 0.207 milliseconds (cumulative count 38)
+0.512% <= 0.303 milliseconds (cumulative count 512)
+16.193% <= 0.407 milliseconds (cumulative count 16193)
+50.210% <= 0.503 milliseconds (cumulative count 50210)
+71.931% <= 0.607 milliseconds (cumulative count 71931)
+84.372% <= 0.703 milliseconds (cumulative count 84372)
+91.815% <= 0.807 milliseconds (cumulative count 91815)
+95.445% <= 0.903 milliseconds (cumulative count 95445)
+97.114% <= 1.007 milliseconds (cumulative count 97114)
+97.835% <= 1.103 milliseconds (cumulative count 97835)
+98.252% <= 1.207 milliseconds (cumulative count 98252)
+98.412% <= 1.303 milliseconds (cumulative count 98412)
+98.512% <= 1.407 milliseconds (cumulative count 98512)
+98.653% <= 1.503 milliseconds (cumulative count 98653)
+98.776% <= 1.607 milliseconds (cumulative count 98776)
+98.858% <= 1.703 milliseconds (cumulative count 98858)
+99.411% <= 1.807 milliseconds (cumulative count 99411)
+99.968% <= 1.903 milliseconds (cumulative count 99968)
+99.982% <= 2.007 milliseconds (cumulative count 99982)
+99.986% <= 2.103 milliseconds (cumulative count 99986)
+100.000% <= 3.103 milliseconds (cumulative count 100000)
 
 Summary:
-  throughput summary: 99304.87 requests per second
+  throughput summary: 107181.13 requests per second
   latency summary (msec):
           avg       min       p50       p95       p99       max
-        0.351     0.056     0.327     0.607     0.799     1.519
+        0.560     0.104     0.503     0.887     1.759     2.359
+
+
+
 ```
 
 ## How do I play with this?
